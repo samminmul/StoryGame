@@ -1,0 +1,114 @@
+using UnityEngine;
+using UnityEngine.InputSystem;
+using UnityEngine.SceneManagement;
+
+[RequireComponent(typeof(SpriteRenderer))]
+public class CorridorPlayerController : MonoBehaviour
+{
+    [SerializeField] private float moveSpeed = 4f;
+    [SerializeField] private float minX = -8.5f;
+    [SerializeField] private float maxX = 8.5f;
+    [SerializeField] private float upperFloorSplitY = 0f;
+    [SerializeField] private string leftExitDestination = "OO";
+    [SerializeField] private string rightExitDestination = "OO";
+    [SerializeField] private string upperRightExitScene = "선장실";
+    [SerializeField] private float frameDuration = 0.15f;
+    [SerializeField] private Sprite idleSprite;
+    [SerializeField] private Sprite[] walkFrames; // 옆모습 프레임(왼쪽 기준, 오른쪽은 스프라이트 좌우 반전)
+
+    private bool loggedLeftExit;
+    private bool loggedRightExit;
+    private SpriteRenderer spriteRenderer;
+    private float frameTimer;
+    private int frameIndex;
+
+    private void Awake()
+    {
+        spriteRenderer = GetComponent<SpriteRenderer>();
+    }
+
+    private void Update()
+    {
+        Keyboard keyboard = Keyboard.current;
+        if (keyboard == null)
+        {
+            return;
+        }
+
+        float direction = 0f;
+        if (keyboard.aKey.isPressed || keyboard.leftArrowKey.isPressed)
+        {
+            direction -= 1f;
+        }
+        if (keyboard.dKey.isPressed || keyboard.rightArrowKey.isPressed)
+        {
+            direction += 1f;
+        }
+
+        Vector3 position = transform.position;
+        position.x = Mathf.Clamp(position.x + direction * moveSpeed * Time.deltaTime, minX, maxX);
+        transform.position = position;
+
+        UpdateAnimation(direction);
+
+        if (position.x <= minX)
+        {
+            if (!loggedLeftExit)
+            {
+                Debug.Log($"복도 왼쪽 끝 도달: {leftExitDestination}로 이동");
+                loggedLeftExit = true;
+            }
+        }
+        else
+        {
+            loggedLeftExit = false;
+        }
+
+        if (position.x >= maxX)
+        {
+            if (!loggedRightExit)
+            {
+                loggedRightExit = true;
+                if (position.y > upperFloorSplitY)
+                {
+                    // 2층(위층) 오른쪽 끝은 실제로 선장실 씬으로 전환한다.
+                    SceneManager.LoadScene(upperRightExitScene);
+                }
+                else
+                {
+                    Debug.Log($"복도 오른쪽 끝 도달: {rightExitDestination}로 이동");
+                }
+            }
+        }
+        else
+        {
+            loggedRightExit = false;
+        }
+    }
+
+    private void UpdateAnimation(float direction)
+    {
+        if (direction == 0f || walkFrames == null || walkFrames.Length == 0)
+        {
+            frameTimer = 0f;
+            frameIndex = 0;
+            spriteRenderer.flipX = false;
+            if (idleSprite != null)
+            {
+                spriteRenderer.sprite = idleSprite;
+            }
+            return;
+        }
+
+        spriteRenderer.flipX = direction > 0f;
+
+        frameTimer += Time.deltaTime;
+        if (frameTimer >= frameDuration)
+        {
+            frameTimer -= frameDuration;
+            frameIndex = (frameIndex + 1) % walkFrames.Length;
+        }
+
+        spriteRenderer.sprite = walkFrames[frameIndex];
+    }
+}

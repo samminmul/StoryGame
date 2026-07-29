@@ -1,0 +1,848 @@
+using System.Linq;
+using UnityEditor;
+using UnityEditor.Events;
+using UnityEditor.SceneManagement;
+using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.InputSystem.UI;
+using UnityEngine.SceneManagement;
+using UnityEngine.UI;
+
+public static class CorridorSceneBuilder
+{
+    private const string ScenePath = "Assets/Scenes/SampleScene.unity";
+
+    private const float UpperFloorY = 2.5f;
+    private const float LowerFloorY = -2.5f;
+    private const float CorridorMinX = -8.5f;
+    private const float CorridorMaxX = 8.5f;
+    private const float PlayerTargetHeight = 1.6f;
+
+    private static readonly float[] UpperDoorX = { -6f, -2f, 3f };
+    private static readonly float[] LowerDoorX = { -6f, -2f, 2f, 6f };
+
+    private const string PlayerSheetPath = "Assets/sprites/NPC2 (1).png";
+    private const string DoorSheetPath = "Assets/sprites/bamboo-doorv2.png";
+    private const string LadderSheetPath = "Assets/sprites/rpg-maker-mv-tile-based-video-game-ladder-internet-forum-wooden-ladders-91f06f1e749d7a0194c64c9feeea3dd4.png";
+    private const string BackgroundImagePath = "Assets/sprites/임시 배 배경.jpg";
+    private const string MapImagePath = "Assets/sprites/임시 지도 이미지.png";
+    private const float SpritePixelsPerUnit = 100f;
+
+    // NPC2 (1).png의 옆모습(왼쪽 기준) 걷기 프레임. 오른쪽은 스프라이트를 좌우 반전해서 재사용한다.
+    private static readonly (string name, Rect rect)[] PlayerWalkFrames =
+    {
+        ("Player_4", new Rect(340f, 296f, 84f, 180f)),
+        ("Player_5", new Rect(596f, 300f, 84f, 176f)),
+        ("Player_6", new Rect(84f, 40f, 84f, 180f)),
+    };
+
+    private static Sprite boxSprite;
+    private static Sprite playerSprite;
+    private static Sprite[] playerWalkSprites;
+    private static Sprite doorSprite;
+    private static Sprite ladderSprite;
+    private static Sprite backgroundSprite;
+    private static Sprite mapSprite;
+
+    [MenuItem("Tools/Story Game/Build Corridor Scene")]
+    public static void Build()
+    {
+        boxSprite = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/UISprite.psd");
+        playerSprite = EnsureSlicedSprite(PlayerSheetPath, "Player_Idle", new Rect(84f, 544f, 88f, 192f), SpritePixelsPerUnit);
+        playerWalkSprites = EnsureSlicedSprites(PlayerSheetPath, PlayerWalkFrames, SpritePixelsPerUnit);
+        doorSprite = EnsureSlicedSprite(DoorSheetPath, "Door_Closed", new Rect(7f, 96f, 53f, 86f), SpritePixelsPerUnit);
+        ladderSprite = EnsureSlicedSprite(LadderSheetPath, "Ladder_Single", new Rect(4f, 464f, 44f, 112f), SpritePixelsPerUnit);
+        backgroundSprite = EnsureSingleSprite(BackgroundImagePath);
+        mapSprite = EnsureSingleSprite(MapImagePath);
+
+        // 이미 열려있는 씬이면 다시 로드하지 않는다 - OpenScene은 디스크에 저장된 마지막 버전으로 되돌리기 때문에,
+        // 저장하지 않은 상태에서 재실행하면 인스펙터에서 손으로 고친 내용이 전부 사라진다.
+        Scene scene = EditorSceneManager.GetActiveScene();
+        if (scene.path != ScenePath)
+        {
+            scene = System.IO.File.Exists(ScenePath)
+                ? EditorSceneManager.OpenScene(ScenePath)
+                : EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+        }
+
+        Camera camera = BuildCamera();
+        BuildEventSystem();
+
+        Transform corridorRoot = FindOrCreate("CorridorRoot").transform;
+        BuildBackground(corridorRoot);
+        BuildFloorDivider(corridorRoot);
+        BuildDoors(corridorRoot, "Upper", UpperFloorY, UpperDoorX);
+        BuildDoors(corridorRoot, "Lower", LowerFloorY, LowerDoorX);
+        BuildLadder(corridorRoot, "Ladder_Left", CorridorMinX);
+        BuildLadder(corridorRoot, "Ladder_Right", CorridorMaxX);
+
+        Transform player = BuildPlayer(corridorRoot);
+
+        CameraFollow2D follow = camera.GetComponent<CameraFollow2D>();
+        SerializedObject followSO = new SerializedObject(follow);
+        followSO.FindProperty("target").objectReferenceValue = player;
+        followSO.FindProperty("minX").floatValue = CorridorMinX;
+        followSO.FindProperty("maxX").floatValue = CorridorMaxX;
+        followSO.ApplyModifiedProperties();
+
+        BuildHud(camera);
+
+        EditorSceneManager.MarkSceneDirty(scene);
+        EditorSceneManager.SaveScene(scene, ScenePath);
+
+        var buildScenes = EditorBuildSettings.scenes.ToList();
+        if (!buildScenes.Any(s => s.path == ScenePath))
+        {
+            buildScenes.Add(new EditorBuildSettingsScene(ScenePath, true));
+            EditorBuildSettings.scenes = buildScenes.ToArray();
+        }
+
+        Debug.Log("Corridor scene built at " + ScenePath);
+    }
+
+    private static Camera BuildCamera()
+    {
+        Camera camera = Object.FindAnyObjectByType<Camera>();
+        GameObject cameraGO;
+        if (camera == null)
+        {
+            cameraGO = new GameObject("Main Camera", typeof(Camera), typeof(AudioListener));
+            cameraGO.tag = "MainCamera";
+            camera = cameraGO.GetComponent<Camera>();
+        }
+        else
+        {
+            cameraGO = camera.gameObject;
+        }
+
+        camera.orthographic = true;
+        camera.orthographicSize = 5f;
+        camera.clearFlags = CameraClearFlags.SolidColor;
+        camera.backgroundColor = new Color(0.10f, 0.12f, 0.16f, 1f);
+        camera.transform.position = new Vector3(0f, 0f, -10f);
+
+        if (cameraGO.GetComponent<CameraFollow2D>() == null)
+        {
+            cameraGO.AddComponent<CameraFollow2D>();
+        }
+
+        return camera;
+    }
+
+    private static void BuildEventSystem()
+    {
+        EventSystem eventSystem = Object.FindAnyObjectByType<EventSystem>();
+        GameObject eventSystemGO = eventSystem != null ? eventSystem.gameObject : new GameObject("EventSystem", typeof(EventSystem));
+
+        var legacyInputModule = eventSystemGO.GetComponent<StandaloneInputModule>();
+        if (legacyInputModule != null)
+        {
+            Object.DestroyImmediate(legacyInputModule);
+        }
+        if (eventSystemGO.GetComponent<InputSystemUIInputModule>() == null)
+        {
+            eventSystemGO.AddComponent<InputSystemUIInputModule>();
+        }
+    }
+
+    private static void BuildBackground(Transform parent)
+    {
+        GameObject bg = FindOrCreateChild(parent, "Background", typeof(SpriteRenderer));
+
+        var sr = bg.GetComponent<SpriteRenderer>();
+        sr.sprite = backgroundSprite != null ? backgroundSprite : boxSprite;
+        sr.color = backgroundSprite != null ? Color.white : new Color(0.10f, 0.12f, 0.16f, 1f);
+        sr.sortingOrder = -10;
+        // drawMode+size로 크기를 고정해서, 배경 이미지의 실제 픽셀 크기/스케일과 무관하게 항상 20x12 월드 유닛으로 보이게 한다.
+        sr.drawMode = SpriteDrawMode.Sliced;
+        sr.size = new Vector2(20f, 12f);
+        bg.transform.position = new Vector3(0f, 0f, 0f);
+        bg.transform.localScale = Vector3.one;
+    }
+
+    private static void BuildFloorDivider(Transform parent)
+    {
+        GameObject divider = FindOrCreateChild(parent, "FloorDivider", typeof(SpriteRenderer));
+
+        var sr = divider.GetComponent<SpriteRenderer>();
+        sr.sprite = boxSprite;
+        sr.color = new Color(0.35f, 0.38f, 0.42f, 1f);
+        sr.sortingOrder = -5;
+        divider.transform.position = new Vector3(0f, (UpperFloorY + LowerFloorY) * 0.5f, 0f);
+        divider.transform.localScale = new Vector3(18f, 0.08f, 1f);
+    }
+
+    private static void BuildDoors(Transform parent, string floorName, float floorY, float[] doorX)
+    {
+        const float targetHeight = 4.05f; // 2.7의 1.5배
+        const float verticalOffset = -0.3f; // 바닥선보다 살짝 더 아래로 내림
+        Vector2 nativeSize = SpriteNativeSize(doorSprite);
+        float scale = targetHeight / nativeSize.y;
+
+        for (int i = 0; i < doorX.Length; i++)
+        {
+            string name = $"Door_{floorName}{i + 1}";
+            GameObject door = FindOrCreateChild(parent, name, out bool created, typeof(SpriteRenderer), typeof(BoxCollider2D), typeof(Interactable));
+
+            var sr = door.GetComponent<SpriteRenderer>();
+            sr.sprite = doorSprite;
+            sr.color = Color.white;
+
+            if (created)
+            {
+                // floorY는 바닥선(캐릭터가 서는 높이) 기준이므로, 스프라이트 중심이 아니라 "아래쪽 끝"이 floorY에 오도록 절반 높이만큼 올려서 배치한다.
+                // 배치는 처음 생성될 때만 계산하고, 이후에는 씬에 저장된 좌표(수동으로 옮긴 값 포함)를 그대로 유지한다.
+                door.transform.position = new Vector3(doorX[i], floorY + targetHeight * 0.5f + verticalOffset, 0f);
+                door.transform.localScale = new Vector3(scale, scale, 1f);
+
+                var col = door.GetComponent<BoxCollider2D>();
+                col.isTrigger = true;
+                col.size = nativeSize;
+            }
+
+            GameObject prompt = BuildPrompt(door.transform, "Prompt", "Space", targetHeight * 0.5f + 0.3f);
+
+            var interactable = door.GetComponent<Interactable>();
+            SerializedObject so = new SerializedObject(interactable);
+            so.FindProperty("interactionLabel").stringValue = $"{floorName} {i + 1}번 방 문";
+            so.FindProperty("promptRoot").objectReferenceValue = prompt;
+            so.ApplyModifiedProperties();
+        }
+    }
+
+    private static void BuildLadder(Transform parent, string name, float x)
+    {
+        GameObject ladder = FindOrCreateChild(parent, name, out bool created, typeof(SpriteRenderer), typeof(BoxCollider2D));
+
+        // 예전에 붙었던 범용 Interactable(Space로 로그만 찍는 용도)은 사다리에서는 더 이상 쓰지 않는다.
+        Interactable oldInteractable = ladder.GetComponent<Interactable>();
+        if (oldInteractable != null)
+        {
+            Object.DestroyImmediate(oldInteractable);
+        }
+
+        LadderClimb climb = ladder.GetComponent<LadderClimb>();
+        if (climb == null)
+        {
+            climb = ladder.AddComponent<LadderClimb>();
+        }
+
+        var sr = ladder.GetComponent<SpriteRenderer>();
+        sr.sprite = ladderSprite;
+        sr.color = Color.white;
+
+        // 사다리는 아래층 바닥(LowerFloorY)에 딱 닿게 하고, 위층 바닥(UpperFloorY)보다 살짝(topOverhang) 위까지 뻗어서
+        // 실제로 위층 바닥까지 붙잡고 올라가는 것처럼 보이게 한다. (프롬프트 위치 계산에도 필요해서 매번 계산한다.)
+        const float topOverhang = 0.3f;
+        float bottomY = LowerFloorY;
+        float topY = UpperFloorY + topOverhang;
+        float targetHeight = topY - bottomY;
+
+        if (created)
+        {
+            Vector2 nativeSize = SpriteNativeSize(ladderSprite);
+            float scale = targetHeight / nativeSize.y;
+
+            ladder.transform.position = new Vector3(x, (topY + bottomY) * 0.5f, 0f);
+            ladder.transform.localScale = new Vector3(scale, scale, 1f);
+
+            var col = ladder.GetComponent<BoxCollider2D>();
+            col.isTrigger = true;
+            col.size = nativeSize;
+        }
+
+        // 위/아래 화살표는 각각 사다리를 타기 시작하는 위치(아래쪽 끝 / 위쪽 끝) 근처에 보이도록 배치한다.
+        GameObject promptUp = BuildPrompt(ladder.transform, "PromptUp", "▲", -targetHeight * 0.5f + 0.6f);
+        GameObject promptDown = BuildPrompt(ladder.transform, "PromptDown", "▼", targetHeight * 0.5f - 0.6f);
+
+        SerializedObject so = new SerializedObject(climb);
+        so.FindProperty("lowerY").floatValue = LowerFloorY + PlayerTargetHeight * 0.5f;
+        so.FindProperty("upperY").floatValue = UpperFloorY + PlayerTargetHeight * 0.5f;
+        so.FindProperty("promptUp").objectReferenceValue = promptUp;
+        so.FindProperty("promptDown").objectReferenceValue = promptDown;
+        so.ApplyModifiedProperties();
+    }
+
+    private static GameObject BuildPrompt(Transform parent, string childName, string label, float worldYOffset)
+    {
+        Transform existing = parent.Find(childName);
+        GameObject prompt = existing != null ? existing.gameObject : new GameObject(childName, typeof(TextMesh));
+        prompt.transform.SetParent(parent, false);
+
+        // 부모(문/사다리)가 크게 스케일된 상태라 로컬 좌표를 그대로 쓰면 화면 밖으로 튕겨나간다.
+        // 부모의 스케일로 나눠서 항상 일정한 월드 단위 오프셋/크기로 보이게 보정한다.
+        const float worldSize = 0.35f;
+        Vector3 parentScale = parent.lossyScale;
+        float safeScaleX = Mathf.Max(Mathf.Abs(parentScale.x), 0.0001f);
+        float safeScaleY = Mathf.Max(Mathf.Abs(parentScale.y), 0.0001f);
+
+        prompt.transform.localPosition = new Vector3(0f, worldYOffset / safeScaleY, 0f);
+        prompt.transform.localScale = new Vector3(worldSize / safeScaleX, worldSize / safeScaleY, 1f);
+
+        var textMesh = prompt.GetComponent<TextMesh>();
+        textMesh.text = label;
+        textMesh.anchor = TextAnchor.MiddleCenter;
+        textMesh.alignment = TextAlignment.Center;
+        textMesh.color = Color.white;
+        textMesh.fontSize = 48;
+        textMesh.characterSize = 0.1f;
+
+        var renderer = prompt.GetComponent<MeshRenderer>();
+        renderer.sortingOrder = 10;
+
+        prompt.SetActive(false);
+        return prompt;
+    }
+
+    private static Transform BuildPlayer(Transform parent)
+    {
+        GameObject player = FindOrCreateChild(parent, "Player", out bool created, typeof(SpriteRenderer), typeof(Rigidbody2D), typeof(BoxCollider2D), typeof(CorridorPlayerController));
+        player.tag = "Player";
+
+        var sr = player.GetComponent<SpriteRenderer>();
+        sr.sprite = playerSprite;
+        sr.color = Color.white;
+        sr.sortingOrder = 1;
+
+        var rb = player.GetComponent<Rigidbody2D>();
+        rb.bodyType = RigidbodyType2D.Kinematic;
+        rb.gravityScale = 0f;
+
+        if (created)
+        {
+            Vector2 nativeSize = SpriteNativeSize(playerSprite);
+            float scale = PlayerTargetHeight / nativeSize.y;
+
+            // UpperFloorY는 발이 닿는 바닥선이므로, 스프라이트 중심이 아니라 발 위치가 거기에 오도록 절반 높이만큼 올려서 배치한다.
+            player.transform.position = new Vector3(0f, UpperFloorY + PlayerTargetHeight * 0.5f, 0f);
+            player.transform.localScale = new Vector3(scale, scale, 1f);
+
+            var col = player.GetComponent<BoxCollider2D>();
+            col.size = nativeSize;
+        }
+
+        var controller = player.GetComponent<CorridorPlayerController>();
+        SerializedObject so = new SerializedObject(controller);
+        so.FindProperty("minX").floatValue = CorridorMinX;
+        so.FindProperty("maxX").floatValue = CorridorMaxX;
+        so.FindProperty("idleSprite").objectReferenceValue = playerSprite;
+        SerializedProperty walkFramesProp = so.FindProperty("walkFrames");
+        walkFramesProp.arraySize = playerWalkSprites?.Length ?? 0;
+        for (int i = 0; i < walkFramesProp.arraySize; i++)
+        {
+            walkFramesProp.GetArrayElementAtIndex(i).objectReferenceValue = playerWalkSprites[i];
+        }
+        so.ApplyModifiedProperties();
+
+        return player.transform;
+    }
+
+    private static void BuildHud(Camera camera)
+    {
+        Canvas canvas = Object.FindAnyObjectByType<Canvas>();
+        GameObject canvasGO;
+        if (canvas == null)
+        {
+            canvasGO = new GameObject("HudCanvas", typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
+            canvas = canvasGO.GetComponent<Canvas>();
+            var scaler = canvasGO.GetComponent<CanvasScaler>();
+            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scaler.referenceResolution = new Vector2(1920, 1080);
+        }
+        else
+        {
+            canvasGO = canvas.gameObject;
+        }
+
+        // Screen Space - Camera로 카메라에 연결해서, Scene 뷰에서도 캔버스가 카메라 프러스텀 크기에 맞춰 보이도록 함
+        // (Overlay 모드는 Scene 뷰에서 CanvasScaler 기준 해상도만큼 거대한 평면으로 미리보기가 그려져 월드 오브젝트와 스케일이 안 맞아 보임)
+        canvas.renderMode = RenderMode.ScreenSpaceCamera;
+        canvas.worldCamera = camera;
+        canvas.planeDistance = 1f;
+        // Screen Space - Camera 모드에서는 캔버스도 월드의 SpriteRenderer들과 같은 정렬 순서 경쟁에 들어간다.
+        // sortingOrder를 충분히 높여서 플레이어/문 등 어떤 sortingOrder보다도 항상 위에 그려지도록 한다.
+        canvas.sortingOrder = 100;
+
+        GameObject hudControllerGO = FindOrCreate("CorridorHUDController");
+        if (hudControllerGO.GetComponent<CorridorHUDController>() == null)
+        {
+            hudControllerGO.AddComponent<CorridorHUDController>();
+        }
+        var hud = hudControllerGO.GetComponent<CorridorHUDController>();
+
+        GameObject topBar = FindOrCreateChild(canvasGO.transform, "TopBar", typeof(Image));
+        var topBarRT = topBar.GetComponent<RectTransform>();
+        topBarRT.anchorMin = new Vector2(0f, 1f);
+        topBarRT.anchorMax = new Vector2(1f, 1f);
+        topBarRT.pivot = new Vector2(0.5f, 1f);
+        topBarRT.anchoredPosition = Vector2.zero;
+        topBarRT.sizeDelta = new Vector2(0f, 90f);
+        topBar.GetComponent<Image>().color = new Color(0.08f, 0.09f, 0.12f, 0.9f);
+
+        GameObject sunIcon = FindOrCreateChild(topBar.transform, "SunIcon", typeof(Image));
+        var sunRT = sunIcon.GetComponent<RectTransform>();
+        sunRT.anchorMin = new Vector2(0f, 0.5f);
+        sunRT.anchorMax = new Vector2(0f, 0.5f);
+        sunRT.pivot = new Vector2(0f, 0.5f);
+        sunRT.anchoredPosition = new Vector2(24f, 0f);
+        sunRT.sizeDelta = new Vector2(36f, 36f);
+        sunIcon.GetComponent<Image>().color = new Color(0.95f, 0.8f, 0.25f, 1f);
+
+        Text dayText = CreateHudText(topBar.transform, "DayText", "day 17", 30, TextAnchor.MiddleLeft);
+        var dayRT = dayText.GetComponent<RectTransform>();
+        dayRT.anchorMin = new Vector2(0f, 0.5f);
+        dayRT.anchorMax = new Vector2(0f, 0.5f);
+        dayRT.pivot = new Vector2(0f, 0.5f);
+        dayRT.anchoredPosition = new Vector2(72f, 0f);
+        dayRT.sizeDelta = new Vector2(140f, 60f);
+
+        Text titleText = CreateHudText(topBar.transform, "TitleText", "선실 복도", 30, TextAnchor.MiddleCenter);
+        var titleRT = titleText.GetComponent<RectTransform>();
+        titleRT.anchorMin = new Vector2(0.5f, 0.5f);
+        titleRT.anchorMax = new Vector2(0.5f, 0.5f);
+        titleRT.pivot = new Vector2(0.5f, 0.5f);
+        titleRT.anchoredPosition = Vector2.zero;
+        titleRT.sizeDelta = new Vector2(400f, 60f);
+
+        Button menuBtn = CreateHudButton(topBar.transform, "MenuButton", "≡", 44);
+        var menuRT = menuBtn.GetComponent<RectTransform>();
+        menuRT.anchorMin = new Vector2(1f, 0.5f);
+        menuRT.anchorMax = new Vector2(1f, 0.5f);
+        menuRT.pivot = new Vector2(1f, 0.5f);
+        menuRT.anchoredPosition = new Vector2(-24f, 0f);
+        menuRT.sizeDelta = new Vector2(64f, 64f);
+        UnityEventTools.AddPersistentListener(menuBtn.onClick, hud.OnClickMenu);
+
+        GameObject bottomBar = FindOrCreateChild(canvasGO.transform, "BottomBar", typeof(Image));
+        var bottomBarRT = bottomBar.GetComponent<RectTransform>();
+        bottomBarRT.anchorMin = new Vector2(0f, 0f);
+        bottomBarRT.anchorMax = new Vector2(1f, 0f);
+        bottomBarRT.pivot = new Vector2(0.5f, 0f);
+        bottomBarRT.anchoredPosition = Vector2.zero;
+        bottomBarRT.sizeDelta = new Vector2(0f, 80f);
+        bottomBar.GetComponent<Image>().color = new Color(0.08f, 0.09f, 0.12f, 0.9f);
+
+        Button bagBtn = CreateHudButton(bottomBar.transform, "BagButton", "가방", 26);
+        var bagRT = bagBtn.GetComponent<RectTransform>();
+        bagRT.anchorMin = new Vector2(0f, 0.5f);
+        bagRT.anchorMax = new Vector2(0f, 0.5f);
+        bagRT.pivot = new Vector2(0f, 0.5f);
+        bagRT.anchoredPosition = new Vector2(24f, 0f);
+        bagRT.sizeDelta = new Vector2(140f, 56f);
+        UnityEventTools.AddPersistentListener(bagBtn.onClick, hud.OnClickBag);
+
+        Button mapBtn = CreateHudButton(bottomBar.transform, "MapButton", "지도", 26);
+        var mapRT = mapBtn.GetComponent<RectTransform>();
+        mapRT.anchorMin = new Vector2(1f, 0.5f);
+        mapRT.anchorMax = new Vector2(1f, 0.5f);
+        mapRT.pivot = new Vector2(1f, 0.5f);
+        mapRT.anchoredPosition = new Vector2(-24f, 0f);
+        mapRT.sizeDelta = new Vector2(140f, 56f);
+        UnityEventTools.AddPersistentListener(mapBtn.onClick, hud.OnClickMap);
+
+        GameObject menuOverlay = BuildMenuOverlay(canvasGO.transform, hud);
+        GameObject mapOverlay = BuildMapOverlay(canvasGO.transform, hud);
+        GameObject bagOverlay = BuildBagOverlay(canvasGO.transform);
+
+        SerializedObject hudSO = new SerializedObject(hud);
+        hudSO.FindProperty("dayText").objectReferenceValue = dayText;
+        hudSO.FindProperty("menuOverlay").objectReferenceValue = menuOverlay;
+        hudSO.FindProperty("mapOverlay").objectReferenceValue = mapOverlay;
+        hudSO.FindProperty("bagOverlay").objectReferenceValue = bagOverlay;
+        hudSO.ApplyModifiedProperties();
+    }
+
+    private static GameObject BuildMenuOverlay(Transform canvasParent, CorridorHUDController hud)
+    {
+        // 반투명 검정으로 배경을 어둡게 눌러주는 방식. 실제 가우시안 블러는 URP 포스트 프로세싱이 필요해서 별도 작업이 필요함.
+        GameObject overlay = FindOrCreateChild(canvasParent, "MenuOverlay", typeof(Image));
+        var overlayRT = overlay.GetComponent<RectTransform>();
+        overlayRT.anchorMin = Vector2.zero;
+        overlayRT.anchorMax = Vector2.one;
+        overlayRT.offsetMin = Vector2.zero;
+        overlayRT.offsetMax = Vector2.zero;
+        overlay.GetComponent<Image>().color = new Color(0f, 0f, 0f, 0.6f);
+
+        GameObject panel = FindOrCreateChild(overlay.transform, "MenuPanel", typeof(Image));
+        var panelRT = panel.GetComponent<RectTransform>();
+        panelRT.anchorMin = new Vector2(0.5f, 0.5f);
+        panelRT.anchorMax = new Vector2(0.5f, 0.5f);
+        panelRT.pivot = new Vector2(0.5f, 0.5f);
+        panelRT.anchoredPosition = Vector2.zero;
+        panelRT.sizeDelta = new Vector2(480f, 420f);
+        panel.GetComponent<Image>().color = new Color(0.97f, 0.97f, 0.97f, 1f);
+
+        Text title = CreateHudText(panel.transform, "MenuTitle", "메뉴", 32, TextAnchor.MiddleLeft);
+        title.color = Color.black;
+        var titleRT = title.GetComponent<RectTransform>();
+        titleRT.anchorMin = new Vector2(0f, 1f);
+        titleRT.anchorMax = new Vector2(0f, 1f);
+        titleRT.pivot = new Vector2(0f, 1f);
+        titleRT.anchoredPosition = new Vector2(24f, -20f);
+        titleRT.sizeDelta = new Vector2(200f, 50f);
+
+        Button closeBtn = CreateMenuButton(panel.transform, "CloseButton", "X", 22);
+        var closeRT = closeBtn.GetComponent<RectTransform>();
+        closeRT.anchorMin = new Vector2(1f, 1f);
+        closeRT.anchorMax = new Vector2(1f, 1f);
+        closeRT.pivot = new Vector2(1f, 1f);
+        closeRT.anchoredPosition = new Vector2(-16f, -16f);
+        closeRT.sizeDelta = new Vector2(44f, 44f);
+        UnityEventTools.AddPersistentListener(closeBtn.onClick, hud.OnClickCloseMenu);
+
+        GameObject divider = FindOrCreateChild(panel.transform, "Divider", typeof(Image));
+        var dividerRT = divider.GetComponent<RectTransform>();
+        dividerRT.anchorMin = new Vector2(0f, 1f);
+        dividerRT.anchorMax = new Vector2(1f, 1f);
+        dividerRT.pivot = new Vector2(0.5f, 1f);
+        dividerRT.offsetMin = new Vector2(24f, -76f);
+        dividerRT.offsetMax = new Vector2(-24f, -74f);
+        divider.GetComponent<Image>().color = new Color(0f, 0f, 0f, 0.15f);
+
+        GameObject buttonList = FindOrCreateChild(panel.transform, "MenuButtons", typeof(RectTransform), typeof(VerticalLayoutGroup));
+        var listRT = buttonList.GetComponent<RectTransform>();
+        listRT.anchorMin = new Vector2(0.5f, 0.5f);
+        listRT.anchorMax = new Vector2(0.5f, 0.5f);
+        listRT.pivot = new Vector2(0.5f, 0.5f);
+        listRT.anchoredPosition = new Vector2(0f, -20f);
+        listRT.sizeDelta = new Vector2(340f, 220f);
+
+        var layout = buttonList.GetComponent<VerticalLayoutGroup>();
+        layout.spacing = 14f;
+        layout.childAlignment = TextAnchor.MiddleCenter;
+        layout.childControlWidth = true;
+        layout.childControlHeight = true;
+        layout.childForceExpandWidth = true;
+        layout.childForceExpandHeight = false;
+
+        Button settingsBtn = CreateMenuButton(buttonList.transform, "SettingsButton", "설정", 26);
+        settingsBtn.GetComponent<LayoutElement>().preferredHeight = 56f;
+        UnityEventTools.AddPersistentListener(settingsBtn.onClick, hud.OnClickMenuSettings);
+
+        Button saveBtn = CreateMenuButton(buttonList.transform, "SaveButton", "저장", 26);
+        saveBtn.GetComponent<LayoutElement>().preferredHeight = 56f;
+        UnityEventTools.AddPersistentListener(saveBtn.onClick, hud.OnClickMenuSave);
+
+        Button exitBtn = CreateMenuButton(buttonList.transform, "ExitButton", "나가기", 26);
+        exitBtn.GetComponent<LayoutElement>().preferredHeight = 56f;
+        UnityEventTools.AddPersistentListener(exitBtn.onClick, hud.OnClickMenuExit);
+
+        overlay.SetActive(false);
+        return overlay;
+    }
+
+    private static GameObject BuildMapOverlay(Transform canvasParent, CorridorHUDController hud)
+    {
+        GameObject overlay = FindOrCreateChild(canvasParent, "MapOverlay", typeof(Image));
+        var overlayRT = overlay.GetComponent<RectTransform>();
+        overlayRT.anchorMin = Vector2.zero;
+        overlayRT.anchorMax = Vector2.one;
+        overlayRT.offsetMin = Vector2.zero;
+        overlayRT.offsetMax = Vector2.zero;
+        overlay.GetComponent<Image>().color = new Color(0f, 0f, 0f, 0.6f);
+
+        GameObject panel = FindOrCreateChild(overlay.transform, "MapPanel", typeof(Image));
+        var panelRT = panel.GetComponent<RectTransform>();
+        panelRT.anchorMin = new Vector2(0.5f, 0.5f);
+        panelRT.anchorMax = new Vector2(0.5f, 0.5f);
+        panelRT.pivot = new Vector2(0.5f, 0.5f);
+        panelRT.anchoredPosition = Vector2.zero;
+        panelRT.sizeDelta = new Vector2(720f, 540f);
+        panel.GetComponent<Image>().color = new Color(0.97f, 0.97f, 0.97f, 1f);
+
+        GameObject mapImageGO = FindOrCreateChild(panel.transform, "MapImage", typeof(Image));
+        var mapImageRT = mapImageGO.GetComponent<RectTransform>();
+        mapImageRT.anchorMin = Vector2.zero;
+        mapImageRT.anchorMax = Vector2.one;
+        mapImageRT.offsetMin = new Vector2(16f, 16f);
+        mapImageRT.offsetMax = new Vector2(-16f, -16f);
+        var mapImage = mapImageGO.GetComponent<Image>();
+        mapImage.sprite = mapSprite;
+        mapImage.preserveAspect = true;
+
+        Button closeBtn = CreateMenuButton(panel.transform, "CloseButton", "X", 22);
+        var closeRT = closeBtn.GetComponent<RectTransform>();
+        closeRT.anchorMin = new Vector2(1f, 1f);
+        closeRT.anchorMax = new Vector2(1f, 1f);
+        closeRT.pivot = new Vector2(1f, 1f);
+        closeRT.anchoredPosition = new Vector2(-16f, -16f);
+        closeRT.sizeDelta = new Vector2(44f, 44f);
+        UnityEventTools.AddPersistentListener(closeBtn.onClick, hud.OnClickCloseMap);
+
+        overlay.SetActive(false);
+        return overlay;
+    }
+
+    private const int BagSlotCount = 8;
+
+    private static GameObject BuildBagOverlay(Transform canvasParent)
+    {
+        // 배경을 어둡게 누르지 않는다 - 가방은 상황판처럼 배경이 그대로 보여야 함.
+        GameObject overlay = FindOrCreateChild(canvasParent, "BagOverlay", typeof(Image));
+        var overlayRT = overlay.GetComponent<RectTransform>();
+        overlayRT.anchorMin = Vector2.zero;
+        overlayRT.anchorMax = Vector2.one;
+        overlayRT.offsetMin = Vector2.zero;
+        overlayRT.offsetMax = Vector2.zero;
+        overlay.GetComponent<Image>().color = new Color(0f, 0f, 0f, 0f);
+
+        GameObject panel = FindOrCreateChild(overlay.transform, "BagPanel", typeof(Image));
+        var panelRT = panel.GetComponent<RectTransform>();
+        panelRT.anchorMin = new Vector2(0.5f, 0f);
+        panelRT.anchorMax = new Vector2(0.5f, 0f);
+        panelRT.pivot = new Vector2(0.5f, 0f);
+        panelRT.anchoredPosition = new Vector2(0f, 100f);
+        panelRT.sizeDelta = new Vector2(820f, 240f);
+        panel.GetComponent<Image>().color = new Color(0.97f, 0.97f, 0.97f, 0.95f);
+
+        Button prevBtn = CreateMenuButton(panel.transform, "PrevButton", "◁", 22);
+        var prevRT = prevBtn.GetComponent<RectTransform>();
+        prevRT.anchorMin = new Vector2(0f, 0f);
+        prevRT.anchorMax = new Vector2(0f, 0f);
+        prevRT.pivot = new Vector2(0f, 0f);
+        prevRT.anchoredPosition = new Vector2(16f, 16f);
+        prevRT.sizeDelta = new Vector2(40f, 40f);
+
+        Button nextBtn = CreateMenuButton(panel.transform, "NextButton", "▷", 22);
+        var nextRT = nextBtn.GetComponent<RectTransform>();
+        nextRT.anchorMin = new Vector2(0f, 0f);
+        nextRT.anchorMax = new Vector2(0f, 0f);
+        nextRT.pivot = new Vector2(0f, 0f);
+        nextRT.anchoredPosition = new Vector2(64f, 16f);
+        nextRT.sizeDelta = new Vector2(40f, 40f);
+
+        GameObject slotRow = FindOrCreateChild(panel.transform, "SlotRow", typeof(RectTransform), typeof(HorizontalLayoutGroup));
+        var slotRowRT = slotRow.GetComponent<RectTransform>();
+        slotRowRT.anchorMin = new Vector2(0.5f, 1f);
+        slotRowRT.anchorMax = new Vector2(0.5f, 1f);
+        slotRowRT.pivot = new Vector2(0.5f, 1f);
+        slotRowRT.anchoredPosition = new Vector2(0f, -24f);
+        slotRowRT.sizeDelta = new Vector2(660f, 96f);
+
+        var slotLayout = slotRow.GetComponent<HorizontalLayoutGroup>();
+        slotLayout.spacing = 12f;
+        slotLayout.childAlignment = TextAnchor.MiddleCenter;
+        slotLayout.childControlWidth = true;
+        slotLayout.childControlHeight = true;
+        slotLayout.childForceExpandWidth = false;
+        slotLayout.childForceExpandHeight = false;
+
+        for (int i = 0; i < BagSlotCount; i++)
+        {
+            GameObject slot = FindOrCreateChild(slotRow.transform, $"Slot{i}", typeof(Image), typeof(LayoutElement));
+            slot.GetComponent<Image>().color = new Color(0.85f, 0.85f, 0.85f, 1f);
+            var slotLayoutElement = slot.GetComponent<LayoutElement>();
+            slotLayoutElement.preferredWidth = 72f;
+            slotLayoutElement.preferredHeight = 72f;
+        }
+
+        overlay.SetActive(false);
+        return overlay;
+    }
+
+    private static Button CreateMenuButton(Transform parent, string name, string label, int fontSize)
+    {
+        GameObject go = FindOrCreateChild(parent, name, typeof(Image), typeof(Button), typeof(LayoutElement));
+        go.GetComponent<Image>().color = Color.white;
+
+        GameObject textGO = FindOrCreateChild(go.transform, "Text", typeof(Text));
+        var text = textGO.GetComponent<Text>();
+        text.text = label;
+        text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        text.alignment = TextAnchor.MiddleCenter;
+        text.color = Color.black;
+        text.fontSize = fontSize;
+        var textRT = textGO.GetComponent<RectTransform>();
+        textRT.anchorMin = Vector2.zero;
+        textRT.anchorMax = Vector2.one;
+        textRT.offsetMin = Vector2.zero;
+        textRT.offsetMax = Vector2.zero;
+
+        Button button = go.GetComponent<Button>();
+        ColorBlock colors = button.colors;
+        colors.normalColor = Color.white;
+        colors.highlightedColor = new Color(0.75f, 0.85f, 1f, 1f); // 마우스를 올리면 옅은 파란색으로 강조
+        colors.pressedColor = new Color(0.6f, 0.75f, 1f, 1f);
+        colors.selectedColor = colors.highlightedColor;
+        colors.fadeDuration = 0.08f;
+        button.colors = colors;
+
+        return button;
+    }
+
+    private static Text CreateHudText(Transform parent, string name, string label, int fontSize, TextAnchor anchor)
+    {
+        GameObject go = FindOrCreateChild(parent, name, typeof(Text));
+        var text = go.GetComponent<Text>();
+        text.text = label;
+        text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        text.alignment = anchor;
+        text.color = Color.white;
+        text.fontSize = fontSize;
+        return text;
+    }
+
+    private static Button CreateHudButton(Transform parent, string name, string label, int fontSize)
+    {
+        GameObject go = FindOrCreateChild(parent, name, typeof(Image), typeof(Button));
+        go.GetComponent<Image>().color = new Color(1f, 1f, 1f, 0.12f);
+
+        GameObject textGO = FindOrCreateChild(go.transform, "Text", typeof(Text));
+        var text = textGO.GetComponent<Text>();
+        text.text = label;
+        text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        text.alignment = TextAnchor.MiddleCenter;
+        text.color = Color.white;
+        text.fontSize = fontSize;
+        var textRT = textGO.GetComponent<RectTransform>();
+        textRT.anchorMin = Vector2.zero;
+        textRT.anchorMax = Vector2.one;
+        textRT.offsetMin = Vector2.zero;
+        textRT.offsetMax = Vector2.zero;
+
+        return go.GetComponent<Button>();
+    }
+
+    private static Vector2 SpriteNativeSize(Sprite sprite)
+    {
+        return sprite.rect.size / sprite.pixelsPerUnit;
+    }
+
+    private static Sprite[] EnsureSlicedSprites(string assetPath, (string name, Rect rect)[] frames, float pixelsPerUnit)
+    {
+        TextureImporter importer = AssetImporter.GetAtPath(assetPath) as TextureImporter;
+        if (importer == null)
+        {
+            Debug.LogError($"텍스처를 찾을 수 없음: {assetPath}");
+            return new Sprite[frames.Length];
+        }
+
+        var expectedNames = frames.Select(f => f.name).ToArray();
+
+        // 기존 importer.spritesheet와 병합하지 않고, 우리가 원하는 프레임 목록(+겹치지 않는 기존 프레임 보존)을
+        // 항상 통째로 새로 만들어서 덮어쓴다. 병합 방식은 반영이 안 되는 경우가 있어 결정론적으로 단순화함.
+        var desired = frames.Select(f => new SpriteMetaData
+        {
+            name = f.name,
+            rect = f.rect,
+            alignment = (int)SpriteAlignment.Center,
+            pivot = new Vector2(0.5f, 0.5f)
+        }).ToList();
+
+        if (importer.spritesheet != null)
+        {
+            foreach (var existing in importer.spritesheet)
+            {
+                if (!expectedNames.Contains(existing.name))
+                {
+                    desired.Add(existing);
+                }
+            }
+        }
+
+        importer.textureType = TextureImporterType.Sprite;
+        importer.spriteImportMode = SpriteImportMode.Multiple;
+        importer.spritePixelsPerUnit = pixelsPerUnit;
+        importer.filterMode = FilterMode.Point;
+        importer.spritesheet = desired.ToArray();
+        EditorUtility.SetDirty(importer);
+        importer.SaveAndReimport();
+        AssetDatabase.Refresh(ImportAssetOptions.ForceUpdate);
+
+        var sprites = AssetDatabase.LoadAllAssetsAtPath(assetPath).OfType<Sprite>().ToList();
+        var result = new Sprite[frames.Length];
+        for (int i = 0; i < frames.Length; i++)
+        {
+            result[i] = sprites.FirstOrDefault(s => s.name == expectedNames[i]);
+        }
+        return result;
+    }
+
+    private static Sprite EnsureSlicedSprite(string assetPath, string spriteName, Rect pixelRect, float pixelsPerUnit)
+    {
+        TextureImporter importer = AssetImporter.GetAtPath(assetPath) as TextureImporter;
+        if (importer == null)
+        {
+            Debug.LogError($"텍스처를 찾을 수 없음: {assetPath}");
+            return null;
+        }
+
+        bool alreadySliced = importer.textureType == TextureImporterType.Sprite
+            && importer.spriteImportMode == SpriteImportMode.Multiple
+            && Mathf.Approximately(importer.spritePixelsPerUnit, pixelsPerUnit)
+            && importer.spritesheet != null
+            && importer.spritesheet.Any(s => s.name == spriteName && s.rect == pixelRect);
+
+        if (!alreadySliced)
+        {
+            importer.textureType = TextureImporterType.Sprite;
+            importer.spriteImportMode = SpriteImportMode.Multiple;
+            importer.spritePixelsPerUnit = pixelsPerUnit;
+            importer.filterMode = FilterMode.Point;
+
+            var otherFrames = (importer.spritesheet ?? new SpriteMetaData[0]).Where(s => s.name != spriteName);
+            var meta = new SpriteMetaData
+            {
+                name = spriteName,
+                rect = pixelRect,
+                alignment = (int)SpriteAlignment.Center,
+                pivot = new Vector2(0.5f, 0.5f)
+            };
+            importer.spritesheet = otherFrames.Append(meta).ToArray();
+            importer.SaveAndReimport();
+        }
+
+        return AssetDatabase.LoadAllAssetsAtPath(assetPath).OfType<Sprite>().FirstOrDefault(s => s.name == spriteName);
+    }
+
+    private static Sprite EnsureSingleSprite(string assetPath)
+    {
+        if (!System.IO.File.Exists(assetPath))
+        {
+            Debug.LogWarning($"배경 이미지가 없음: {assetPath}");
+            return null;
+        }
+
+        TextureImporter importer = AssetImporter.GetAtPath(assetPath) as TextureImporter;
+        if (importer == null)
+        {
+            Debug.LogError($"텍스처를 찾을 수 없음: {assetPath}");
+            return null;
+        }
+
+        if (importer.textureType != TextureImporterType.Sprite || importer.spriteImportMode != SpriteImportMode.Single)
+        {
+            importer.textureType = TextureImporterType.Sprite;
+            importer.spriteImportMode = SpriteImportMode.Single;
+            importer.SaveAndReimport();
+        }
+
+        return AssetDatabase.LoadAssetAtPath<Sprite>(assetPath);
+    }
+
+    private static GameObject FindOrCreate(string name)
+    {
+        GameObject go = GameObject.Find(name);
+        return go != null ? go : new GameObject(name);
+    }
+
+    private static GameObject FindOrCreateChild(Transform parent, string name, params System.Type[] components)
+    {
+        return FindOrCreateChild(parent, name, out _, components);
+    }
+
+    private static GameObject FindOrCreateChild(Transform parent, string name, out bool created, params System.Type[] components)
+    {
+        Transform existing = parent.Find(name);
+        if (existing != null)
+        {
+            created = false;
+            return existing.gameObject;
+        }
+
+        created = true;
+        GameObject go = new GameObject(name, components);
+        go.transform.SetParent(parent, false);
+        return go;
+    }
+}
