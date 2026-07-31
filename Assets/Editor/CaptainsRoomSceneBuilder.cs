@@ -37,16 +37,11 @@ public static class CaptainsRoomSceneBuilder
             camera.transform.position = new Vector3(0f, 0f, -10f);
         }
 
-        if (GameObject.Find("PlaceholderLabel") == null)
+        // 예전에 만들어 두었던 "준비 중" 플레이스홀더 라벨은 이제 실제 배경/오브젝트가 들어와서 필요 없다.
+        GameObject oldLabel = GameObject.Find("PlaceholderLabel");
+        if (oldLabel != null)
         {
-            GameObject label = new GameObject("PlaceholderLabel", typeof(TextMesh));
-            var textMesh = label.GetComponent<TextMesh>();
-            textMesh.text = "선장실 (준비 중)";
-            textMesh.anchor = TextAnchor.MiddleCenter;
-            textMesh.alignment = TextAlignment.Center;
-            textMesh.color = Color.white;
-            textMesh.characterSize = 0.3f;
-            textMesh.fontSize = 48;
+            Object.DestroyImmediate(oldLabel);
         }
 
         BuildEventSystem();

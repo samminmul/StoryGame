@@ -1,52 +1,37 @@
 fileFormatVersion: 2
-guid: 7ee424874400c9d48b4a8b7332a0170e
+guid: 0abf196567016784d9c2f252c098ce6d
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: -3437287824233547897
-    second: NPC2 (1)_0
+      213: -8496292876068683047
+    second: "\uC120\uC2E4\uBCF5\uB3C4_\uBC29\uBB38_0"
   - first:
-      213: 6962383408727740094
-    second: NPC2 (1)_1
+      213: 3887762011738465562
+    second: "\uC120\uC2E4\uBCF5\uB3C4_\uBC29\uBB38_1"
   - first:
-      213: -6346663530708973997
-    second: NPC2 (1)_2
+      213: 901911237793496316
+    second: "\uC120\uC2E4\uBCF5\uB3C4_\uBC29\uBB38_2"
   - first:
-      213: -81421784738214426
-    second: NPC2 (1)_3
+      213: -2627386076233373353
+    second: "\uC120\uC2E4\uBCF5\uB3C4_\uBC29\uBB38_3"
   - first:
-      213: 3122077311064335726
-    second: NPC2 (1)_4
+      213: -1715942265959502651
+    second: "\uC120\uC2E4\uBCF5\uB3C4_\uBC29\uBB38_4"
   - first:
-      213: 3132789198143699907
-    second: NPC2 (1)_5
+      213: -2124943665959720526
+    second: "\uC120\uC2E4\uBCF5\uB3C4_\uBC29\uBB38_5"
   - first:
-      213: -8941422952117963174
-    second: NPC2 (1)_6
+      213: 4641978637449248242
+    second: "\uC120\uC2E4\uBCF5\uB3C4_\uBC29\uBB38_6"
   - first:
-      213: -845453651175416010
-    second: Player_Idle
+      213: 3131552199822156304
+    second: "\uC120\uC2E4\uBCF5\uB3C4_\uBC29\uBB38_7"
   - first:
-      213: -2311659948842064771
-    second: Player_0
+      213: 7616406243042661683
+    second: "\uC120\uC2E4\uBCF5\uB3C4_\uBC29\uBB38_8"
   - first:
-      213: 7364682651488144517
-    second: Player_1
-  - first:
-      213: -6287787046888575383
-    second: Player_2
-  - first:
-      213: -1182821291677670348
-    second: Player_3
-  - first:
-      213: -4709456396536258026
-    second: Player_4
-  - first:
-      213: -4529042392078601758
-    second: Player_5
-  - first:
-      213: -7446026091647042388
-    second: Player_6
+      213: -2065946413015679447
+    second: "\uC120\uC2E4\uBCF5\uB3C4_\uBC29\uBB38_9"
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -79,7 +64,7 @@ TextureImporter:
   maxTextureSize: 2048
   textureSettings:
     serializedVersion: 2
-    filterMode: 0
+    filterMode: 1
     aniso: 1
     mipBias: 0
     wrapU: 1
@@ -142,167 +127,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: Player_4
+      name: "\uC120\uC2E4\uBCF5\uB3C4_\uBC29\uBB38_0"
       rect:
         serializedVersion: 2
-        x: 340
-        y: 296
-        width: 84
-        height: 180
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: 612e34feb56a4aeb0800000000000000
-      internalID: -4709456396536258026
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Player_5
-      rect:
-        serializedVersion: 2
-        x: 596
-        y: 300
-        width: 84
-        height: 176
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: 2e13877b0fb9521c0800000000000000
-      internalID: -4529042392078601758
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Player_6
-      rect:
-        serializedVersion: 2
-        x: 84
-        y: 40
-        width: 84
-        height: 180
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: cac761b68b66aa890800000000000000
-      internalID: -7446026091647042388
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Player_0
-      rect:
-        serializedVersion: 2
-        x: 84
-        y: 544
-        width: 88
-        height: 192
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: d7465c336855befd0800000000000000
-      internalID: -2311659948842064771
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Player_1
-      rect:
-        serializedVersion: 2
-        x: 340
-        y: 548
-        width: 88
-        height: 188
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: 58cce6d0adb943660800000000000000
-      internalID: 7364682651488144517
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Player_2
-      rect:
-        serializedVersion: 2
-        x: 596
-        y: 544
-        width: 88
-        height: 192
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: 96e67e6befa4db8a0800000000000000
-      internalID: -6287787046888575383
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Player_3
-      rect:
-        serializedVersion: 2
-        x: 84
-        y: 292
-        width: 88
-        height: 188
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: 434a8c45d46c59fe0800000000000000
-      internalID: -1182821291677670348
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: NPC2 (1)_0
-      rect:
-        serializedVersion: 2
-        x: 83
-        y: 543
-        width: 90
-        height: 194
+        x: 349
+        y: 44
+        width: 1213
+        height: 1974
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -311,20 +142,20 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 787b8c57fec4c40d0800000000000000
-      internalID: -3437287824233547897
+      spriteID: 9d28e3ef4aa171a80800000000000000
+      internalID: -8496292876068683047
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: NPC2 (1)_1
+      name: "\uC120\uC2E4\uBCF5\uB3C4_\uBC29\uBB38_1"
       rect:
         serializedVersion: 2
-        x: 339
-        y: 547
-        width: 90
-        height: 190
+        x: 1544
+        y: 1729
+        width: 30
+        height: 38
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -333,20 +164,20 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: ebe4a4b62da5f9060800000000000000
-      internalID: 6962383408727740094
+      spriteID: a15ede093fa14f530800000000000000
+      internalID: 3887762011738465562
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: NPC2 (1)_2
+      name: "\uC120\uC2E4\uBCF5\uB3C4_\uBC29\uBB38_2"
       rect:
         serializedVersion: 2
-        x: 595
-        y: 543
-        width: 90
-        height: 194
+        x: 2004
+        y: 1026
+        width: 37
+        height: 45
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -355,20 +186,20 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 3564a27152f1ce7a0800000000000000
-      internalID: -6346663530708973997
+      spriteID: cfc3d930e7b348c00800000000000000
+      internalID: 901911237793496316
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: NPC2 (1)_3
+      name: "\uC120\uC2E4\uBCF5\uB3C4_\uBC29\uBB38_3"
       rect:
         serializedVersion: 2
-        x: 83
-        y: 291
-        width: 90
-        height: 190
+        x: 1603
+        y: 91
+        width: 14
+        height: 21
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -377,20 +208,20 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 6ed43b3715bbedef0800000000000000
-      internalID: -81421784738214426
+      spriteID: 7596d4eb846a98bd0800000000000000
+      internalID: -2627386076233373353
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: NPC2 (1)_4
+      name: "\uC120\uC2E4\uBCF5\uB3C4_\uBC29\uBB38_4"
       rect:
         serializedVersion: 2
-        x: 339
-        y: 295
-        width: 86
-        height: 182
+        x: 530
+        y: 0
+        width: 73
+        height: 14
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -399,20 +230,20 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: e65eb4fd5c8d35b20800000000000000
-      internalID: 3122077311064335726
+      spriteID: 5cca76eb99fbf28e0800000000000000
+      internalID: -1715942265959502651
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: NPC2 (1)_5
+      name: "\uC120\uC2E4\uBCF5\uB3C4_\uBC29\uBB38_5"
       rect:
         serializedVersion: 2
-        x: 595
-        y: 299
-        width: 86
-        height: 178
+        x: 621
+        y: 4
+        width: 756
+        height: 10
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -421,20 +252,20 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 3cb398f6d27e97b20800000000000000
-      internalID: 3132789198143699907
+      spriteID: 2b921c68efea282e0800000000000000
+      internalID: -2124943665959720526
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: NPC2 (1)_6
+      name: "\uC120\uC2E4\uBCF5\uB3C4_\uBC29\uBB38_6"
       rect:
         serializedVersion: 2
-        x: 83
-        y: 39
-        width: 86
-        height: 182
+        x: 1379
+        y: 8
+        width: 6
+        height: 6
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -443,30 +274,74 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: a56fb70e23fa9e380800000000000000
-      internalID: -8941422952117963174
+      spriteID: 2fd3d1cf9fe9b6040800000000000000
+      internalID: 4641978637449248242
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Player_Idle
+      name: "\uC120\uC2E4\uBCF5\uB3C4_\uBC29\uBB38_7"
       rect:
         serializedVersion: 2
-        x: 84
-        y: 544
-        width: 88
-        height: 192
+        x: 1403
+        y: 0
+        width: 72
+        height: 14
       alignment: 0
-      pivot: {x: 0.5, y: 0.5}
+      pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 63fd1a732685444f0800000000000000
-      internalID: -845453651175416010
+      spriteID: 0122ef15222857b20800000000000000
+      internalID: 3131552199822156304
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: "\uC120\uC2E4\uBCF5\uB3C4_\uBC29\uBB38_8"
+      rect:
+        serializedVersion: 2
+        x: 1501
+        y: 12
+        width: 21
+        height: 22
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 33510a5ef19e2b960800000000000000
+      internalID: 7616406243042661683
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: "\uC120\uC2E4\uBCF5\uB3C4_\uBC29\uBB38_9"
+      rect:
+        serializedVersion: 2
+        x: 1583
+        y: 0
+        width: 61
+        height: 85
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 92e3537eea84453e0800000000000000
+      internalID: -2065946413015679447
       vertices: []
       indices: 
       edges: []
@@ -485,21 +360,16 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      NPC2 (1)_0: -3437287824233547897
-      NPC2 (1)_1: 6962383408727740094
-      NPC2 (1)_2: -6346663530708973997
-      NPC2 (1)_3: -81421784738214426
-      NPC2 (1)_4: 3122077311064335726
-      NPC2 (1)_5: 3132789198143699907
-      NPC2 (1)_6: -8941422952117963174
-      Player_0: -2311659948842064771
-      Player_1: 7364682651488144517
-      Player_2: -6287787046888575383
-      Player_3: -1182821291677670348
-      Player_4: -4709456396536258026
-      Player_5: -4529042392078601758
-      Player_6: -7446026091647042388
-      Player_Idle: -845453651175416010
+      "\uC120\uC2E4\uBCF5\uB3C4_\uBC29\uBB38_0": -8496292876068683047
+      "\uC120\uC2E4\uBCF5\uB3C4_\uBC29\uBB38_1": 3887762011738465562
+      "\uC120\uC2E4\uBCF5\uB3C4_\uBC29\uBB38_2": 901911237793496316
+      "\uC120\uC2E4\uBCF5\uB3C4_\uBC29\uBB38_3": -2627386076233373353
+      "\uC120\uC2E4\uBCF5\uB3C4_\uBC29\uBB38_4": -1715942265959502651
+      "\uC120\uC2E4\uBCF5\uB3C4_\uBC29\uBB38_5": -2124943665959720526
+      "\uC120\uC2E4\uBCF5\uB3C4_\uBC29\uBB38_6": 4641978637449248242
+      "\uC120\uC2E4\uBCF5\uB3C4_\uBC29\uBB38_7": 3131552199822156304
+      "\uC120\uC2E4\uBCF5\uB3C4_\uBC29\uBB38_8": 7616406243042661683
+      "\uC120\uC2E4\uBCF5\uB3C4_\uBC29\uBB38_9": -2065946413015679447
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

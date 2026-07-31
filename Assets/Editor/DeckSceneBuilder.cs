@@ -8,32 +8,30 @@ public static class DeckSceneBuilder
 {
     private const string ScenePath = "Assets/Scenes/갑판.unity";
     private const string BackgroundImagePath = "Assets/sprites/갑판.png";
-    private const string PlayerSheetPath = "Assets/sprites/NPC2 (1).png";
+    private const string PlayerSheetPath = "Assets/sprites/움직임시트.PNG";
     private const float PlayerTargetHeight = 1.6f;
-    private const float SpritePixelsPerUnit = 100f;
 
-    // NPC2 (1).png는 3x3 프레임 시트(마지막 2칸은 비어있음). 각 프레임의 픽셀 경계를
-    // 실제 캐릭터를 감싸는 타이트한 사각형으로 미리 계산해둔 값.
-    // 0,1: 아래쪽 / 2,3: 위쪽(뒷모습) / 4,5,6: 옆모습(왼쪽 기준, 오른쪽은 스프라이트 반전)
-    private static readonly Rect[] PlayerFrameRects =
-    {
-        new Rect(84f, 544f, 88f, 192f),
-        new Rect(340f, 548f, 88f, 188f),
-        new Rect(596f, 544f, 88f, 192f),
-        new Rect(84f, 292f, 88f, 188f),
-        new Rect(340f, 296f, 84f, 180f),
-        new Rect(596f, 300f, 84f, 176f),
-        new Rect(84f, 40f, 84f, 180f),
-    };
+    // 움직임시트.PNG는 이미 방향별 걷기 프레임으로 슬라이스되어 있음(움직임시트_0 ~ _50).
+    private static readonly string[] DownFrameNames = { "움직임시트_49", "움직임시트_46", "움직임시트_45", "움직임시트_44" };
+    private static readonly string[] UpFrameNames = { "움직임시트_41", "움직임시트_42", "움직임시트_43", "움직임시트_40" };
+    private static readonly string[] LeftFrameNames = { "움직임시트_16", "움직임시트_17", "움직임시트_18", "움직임시트_19" };
+    private static readonly string[] RightFrameNames = { "움직임시트_36", "움직임시트_37", "움직임시트_38", "움직임시트_39" };
 
     private static Sprite backgroundSprite;
-    private static Sprite[] playerFrames;
+    private static Sprite[] downFrames;
+    private static Sprite[] upFrames;
+    private static Sprite[] leftFrames;
+    private static Sprite[] rightFrames;
 
     [MenuItem("Tools/Story Game/Build Deck Scene (Placeholder)")]
     public static void Build()
     {
         backgroundSprite = EnsureSingleSprite(BackgroundImagePath);
-        playerFrames = EnsureSlicedSprites(PlayerSheetPath, "Player_", PlayerFrameRects, SpritePixelsPerUnit);
+        Sprite[] allPlayerSprites = AssetDatabase.LoadAllAssetsAtPath(PlayerSheetPath).OfType<Sprite>().ToArray();
+        downFrames = ResolveNamedFrames(allPlayerSprites, DownFrameNames);
+        upFrames = ResolveNamedFrames(allPlayerSprites, UpFrameNames);
+        leftFrames = ResolveNamedFrames(allPlayerSprites, LeftFrameNames);
+        rightFrames = ResolveNamedFrames(allPlayerSprites, RightFrameNames);
 
         // 이미 열려있는 씬이면 다시 로드하지 않는다 - 저장 안 한 변경사항이 날아가는 것을 방지.
         Scene scene = EditorSceneManager.GetActiveScene();
@@ -110,26 +108,30 @@ public static class DeckSceneBuilder
 
     private static void BuildBackground()
     {
-        if (backgroundSprite == null)
-        {
-            return;
-        }
-
         GameObject bg = GameObject.Find("Background");
-        if (bg == null)
+        bool created = bg == null;
+        if (created)
         {
             bg = new GameObject("Background", typeof(SpriteRenderer));
         }
 
         var sr = bg.GetComponent<SpriteRenderer>();
-        sr.sprite = backgroundSprite;
-        sr.color = Color.white;
         sr.sortingOrder = -10;
-        // drawMode+size로 크기를 고정해서, 배경 이미지의 실제 픽셀 크기/스케일과 무관하게 항상 20x12 월드 유닛으로 보이게 한다.
-        sr.drawMode = SpriteDrawMode.Sliced;
-        sr.size = new Vector2(20f, 12f);
-        bg.transform.position = new Vector3(0f, 0f, 0f);
-        bg.transform.localScale = Vector3.one;
+        // 처음 생성될 때만 기본 이미지/크기/배치를 적용한다 - 이미 있는 오브젝트는 인스펙터에서 바꾼
+        // 이미지와 크기(수동으로 조절한 값 포함)를 그대로 유지.
+        if (created)
+        {
+            if (backgroundSprite != null)
+            {
+                sr.sprite = backgroundSprite;
+                sr.color = Color.white;
+            }
+            // drawMode+size로 크기를 고정해서, 배경 이미지의 실제 픽셀 크기/스케일과 무관하게 항상 20x12 월드 유닛으로 보이게 한다.
+            sr.drawMode = SpriteDrawMode.Sliced;
+            sr.size = new Vector2(20f, 12f);
+            bg.transform.position = new Vector3(0f, 0f, 0f);
+            bg.transform.localScale = Vector3.one;
+        }
     }
 
     private static Transform BuildPlayer()
@@ -142,7 +144,7 @@ public static class DeckSceneBuilder
         }
         player.tag = "Player";
 
-        Sprite idleSprite = playerFrames != null && playerFrames.Length > 0 ? playerFrames[0] : null;
+        Sprite idleSprite = downFrames != null && downFrames.Length > 0 ? downFrames[0] : null;
 
         var sr = player.GetComponent<SpriteRenderer>();
         sr.sprite = idleSprite;
@@ -167,15 +169,37 @@ public static class DeckSceneBuilder
 
         var controller = player.GetComponent<DeckPlayerController>();
         SerializedObject controllerSO = new SerializedObject(controller);
-        SerializedProperty framesProp = controllerSO.FindProperty("frames");
-        framesProp.arraySize = playerFrames?.Length ?? 0;
-        for (int i = 0; i < framesProp.arraySize; i++)
-        {
-            framesProp.GetArrayElementAtIndex(i).objectReferenceValue = playerFrames[i];
-        }
+        AssignFrames(controllerSO, "downFrames", downFrames);
+        AssignFrames(controllerSO, "upFrames", upFrames);
+        AssignFrames(controllerSO, "leftFrames", leftFrames);
+        AssignFrames(controllerSO, "rightFrames", rightFrames);
         controllerSO.ApplyModifiedProperties();
 
         return player.transform;
+    }
+
+    private static void AssignFrames(SerializedObject so, string propertyName, Sprite[] frames)
+    {
+        SerializedProperty prop = so.FindProperty(propertyName);
+        prop.arraySize = frames?.Length ?? 0;
+        for (int i = 0; i < prop.arraySize; i++)
+        {
+            prop.GetArrayElementAtIndex(i).objectReferenceValue = frames[i];
+        }
+    }
+
+    private static Sprite[] ResolveNamedFrames(Sprite[] allSprites, string[] names)
+    {
+        var result = new Sprite[names.Length];
+        for (int i = 0; i < names.Length; i++)
+        {
+            result[i] = allSprites.FirstOrDefault(s => s.name == names[i]);
+            if (result[i] == null)
+            {
+                Debug.LogWarning($"[DeckSceneBuilder] {names[i]} 프레임을 찾지 못함");
+            }
+        }
+        return result;
     }
 
     private static Sprite EnsureSingleSprite(string assetPath)
@@ -201,62 +225,5 @@ public static class DeckSceneBuilder
         }
 
         return AssetDatabase.LoadAssetAtPath<Sprite>(assetPath);
-    }
-
-    private static Sprite[] EnsureSlicedSprites(string assetPath, string namePrefix, Rect[] pixelRects, float pixelsPerUnit)
-    {
-        TextureImporter importer = AssetImporter.GetAtPath(assetPath) as TextureImporter;
-        if (importer == null)
-        {
-            Debug.LogError($"텍스처를 찾을 수 없음: {assetPath}");
-            return new Sprite[pixelRects.Length];
-        }
-
-        var expectedNames = Enumerable.Range(0, pixelRects.Length).Select(i => $"{namePrefix}{i}").ToArray();
-
-        // 기존 importer.spritesheet를 읽어서 병합하지 않고, 우리가 원하는 프레임 목록(+기존 Player_Idle 보존)을
-        // 항상 통째로 새로 만들어서 덮어쓴다. 병합 방식은 이 텍스처에서 실제로 원인 불명으로 반영이 안 되는
-        // 문제가 있었어서, 결정론적으로 매번 동일한 결과가 나오도록 단순화함.
-        var desired = expectedNames.Select((name, i) => new SpriteMetaData
-        {
-            name = name,
-            rect = pixelRects[i],
-            alignment = (int)SpriteAlignment.Center,
-            pivot = new Vector2(0.5f, 0.5f)
-        }).ToList();
-
-        if (importer.spritesheet != null)
-        {
-            foreach (var existing in importer.spritesheet)
-            {
-                if (!expectedNames.Contains(existing.name))
-                {
-                    desired.Add(existing);
-                }
-            }
-        }
-
-        importer.textureType = TextureImporterType.Sprite;
-        importer.spriteImportMode = SpriteImportMode.Multiple;
-        importer.spritePixelsPerUnit = pixelsPerUnit;
-        importer.filterMode = FilterMode.Point;
-        importer.spritesheet = desired.ToArray();
-        EditorUtility.SetDirty(importer);
-        importer.SaveAndReimport();
-        AssetDatabase.Refresh(ImportAssetOptions.ForceUpdate);
-
-        var sprites = AssetDatabase.LoadAllAssetsAtPath(assetPath).OfType<Sprite>().ToList();
-        Debug.Log($"[DeckSceneBuilder] {assetPath} 슬라이스 결과: {string.Join(", ", sprites.Select(s => s.name))}");
-
-        var result = new Sprite[pixelRects.Length];
-        for (int i = 0; i < pixelRects.Length; i++)
-        {
-            result[i] = sprites.FirstOrDefault(s => s.name == expectedNames[i]);
-            if (result[i] == null)
-            {
-                Debug.LogWarning($"[DeckSceneBuilder] {expectedNames[i]} 프레임을 찾지 못함");
-            }
-        }
-        return result;
     }
 }

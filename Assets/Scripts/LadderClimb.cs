@@ -23,7 +23,7 @@ public class LadderClimb : MonoBehaviour
             return;
         }
 
-        bool onUpperSide = Mathf.Abs(player.position.y - upperY) < Mathf.Abs(player.position.y - lowerY);
+        bool onUpperSide = Mathf.Abs(player.localPosition.y - upperY) < Mathf.Abs(player.localPosition.y - lowerY);
         if (promptUp != null)
         {
             promptUp.SetActive(!onUpperSide);
@@ -51,10 +51,10 @@ public class LadderClimb : MonoBehaviour
 
     private void Climb(float targetY)
     {
-        Vector3 position = player.position;
-        position.x = transform.position.x;
+        Vector3 position = player.localPosition;
+        position.x = transform.localPosition.x;
         position.y = targetY;
-        player.position = position;
+        player.localPosition = position;
     }
 
     private void OnTriggerEnter2D(Collider2D other)

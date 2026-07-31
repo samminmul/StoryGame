@@ -14,13 +14,15 @@ public class CorridorPlayerController : MonoBehaviour
     [SerializeField] private string upperRightExitScene = "선장실";
     [SerializeField] private float frameDuration = 0.15f;
     [SerializeField] private Sprite idleSprite;
-    [SerializeField] private Sprite[] walkFrames; // 옆모습 프레임(왼쪽 기준, 오른쪽은 스프라이트 좌우 반전)
+    [SerializeField] private Sprite[] leftFrames;
+    [SerializeField] private Sprite[] rightFrames;
 
     private bool loggedLeftExit;
     private bool loggedRightExit;
     private SpriteRenderer spriteRenderer;
     private float frameTimer;
     private int frameIndex;
+    private Sprite[] currentFrames;
 
     private void Awake()
     {
@@ -88,10 +90,11 @@ public class CorridorPlayerController : MonoBehaviour
 
     private void UpdateAnimation(float direction)
     {
-        if (direction == 0f || walkFrames == null || walkFrames.Length == 0)
+        if (direction == 0f)
         {
             frameTimer = 0f;
             frameIndex = 0;
+            currentFrames = null;
             spriteRenderer.flipX = false;
             if (idleSprite != null)
             {
@@ -100,15 +103,26 @@ public class CorridorPlayerController : MonoBehaviour
             return;
         }
 
-        spriteRenderer.flipX = direction > 0f;
+        Sprite[] targetFrames = direction > 0f ? rightFrames : leftFrames;
+        if (targetFrames == null || targetFrames.Length == 0)
+        {
+            return;
+        }
+
+        if (targetFrames != currentFrames)
+        {
+            currentFrames = targetFrames;
+            frameTimer = 0f;
+            frameIndex = 0;
+        }
 
         frameTimer += Time.deltaTime;
         if (frameTimer >= frameDuration)
         {
             frameTimer -= frameDuration;
-            frameIndex = (frameIndex + 1) % walkFrames.Length;
+            frameIndex = (frameIndex + 1) % currentFrames.Length;
         }
 
-        spriteRenderer.sprite = walkFrames[frameIndex];
+        spriteRenderer.sprite = currentFrames[frameIndex];
     }
 }

@@ -18,29 +18,20 @@ public static class CorridorSceneBuilder
     private const float CorridorMaxX = 8.5f;
     private const float PlayerTargetHeight = 1.6f;
 
-    private static readonly float[] UpperDoorX = { -6f, -2f, 3f };
-    private static readonly float[] LowerDoorX = { -6f, -2f, 2f, 6f };
-
-    private const string PlayerSheetPath = "Assets/sprites/NPC2 (1).png";
-    private const string DoorSheetPath = "Assets/sprites/bamboo-doorv2.png";
-    private const string LadderSheetPath = "Assets/sprites/rpg-maker-mv-tile-based-video-game-ladder-internet-forum-wooden-ladders-91f06f1e749d7a0194c64c9feeea3dd4.png";
+    private const string PlayerSheetPath = "Assets/sprites/움직임시트.PNG";
     private const string BackgroundImagePath = "Assets/sprites/임시 배 배경.jpg";
     private const string MapImagePath = "Assets/sprites/임시 지도 이미지.png";
     private const float SpritePixelsPerUnit = 100f;
 
-    // NPC2 (1).png의 옆모습(왼쪽 기준) 걷기 프레임. 오른쪽은 스프라이트를 좌우 반전해서 재사용한다.
-    private static readonly (string name, Rect rect)[] PlayerWalkFrames =
-    {
-        ("Player_4", new Rect(340f, 296f, 84f, 180f)),
-        ("Player_5", new Rect(596f, 300f, 84f, 176f)),
-        ("Player_6", new Rect(84f, 40f, 84f, 180f)),
-    };
+    // 움직임시트.PNG는 이미 방향별 걷기 프레임으로 슬라이스되어 있음(움직임시트_0 ~ _50).
+    private const string IdleFrameName = "움직임시트_49";
+    private static readonly string[] LeftFrameNames = { "움직임시트_16", "움직임시트_17", "움직임시트_18", "움직임시트_19" };
+    private static readonly string[] RightFrameNames = { "움직임시트_36", "움직임시트_37", "움직임시트_38", "움직임시트_39" };
 
     private static Sprite boxSprite;
     private static Sprite playerSprite;
-    private static Sprite[] playerWalkSprites;
-    private static Sprite doorSprite;
-    private static Sprite ladderSprite;
+    private static Sprite[] playerLeftSprites;
+    private static Sprite[] playerRightSprites;
     private static Sprite backgroundSprite;
     private static Sprite mapSprite;
 
@@ -48,10 +39,10 @@ public static class CorridorSceneBuilder
     public static void Build()
     {
         boxSprite = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/UISprite.psd");
-        playerSprite = EnsureSlicedSprite(PlayerSheetPath, "Player_Idle", new Rect(84f, 544f, 88f, 192f), SpritePixelsPerUnit);
-        playerWalkSprites = EnsureSlicedSprites(PlayerSheetPath, PlayerWalkFrames, SpritePixelsPerUnit);
-        doorSprite = EnsureSlicedSprite(DoorSheetPath, "Door_Closed", new Rect(7f, 96f, 53f, 86f), SpritePixelsPerUnit);
-        ladderSprite = EnsureSlicedSprite(LadderSheetPath, "Ladder_Single", new Rect(4f, 464f, 44f, 112f), SpritePixelsPerUnit);
+        Sprite[] allPlayerSprites = AssetDatabase.LoadAllAssetsAtPath(PlayerSheetPath).OfType<Sprite>().ToArray();
+        playerSprite = allPlayerSprites.FirstOrDefault(s => s.name == IdleFrameName);
+        playerLeftSprites = ResolveNamedFrames(allPlayerSprites, LeftFrameNames);
+        playerRightSprites = ResolveNamedFrames(allPlayerSprites, RightFrameNames);
         backgroundSprite = EnsureSingleSprite(BackgroundImagePath);
         mapSprite = EnsureSingleSprite(MapImagePath);
 
@@ -71,10 +62,8 @@ public static class CorridorSceneBuilder
         Transform corridorRoot = FindOrCreate("CorridorRoot").transform;
         BuildBackground(corridorRoot);
         BuildFloorDivider(corridorRoot);
-        BuildDoors(corridorRoot, "Upper", UpperFloorY, UpperDoorX);
-        BuildDoors(corridorRoot, "Lower", LowerFloorY, LowerDoorX);
-        BuildLadder(corridorRoot, "Ladder_Left", CorridorMinX);
-        BuildLadder(corridorRoot, "Ladder_Right", CorridorMaxX);
+        // 문/사다리는 더 이상 여기서 자동 생성하지 않는다 - 실제 문/사다리 배치는 씬에서 손으로 관리한다.
+        // (예전 플레이스홀더 문/사다리를 자동으로 되살리는 문제가 있었음.)
 
         Transform player = BuildPlayer(corridorRoot);
 
@@ -147,17 +136,22 @@ public static class CorridorSceneBuilder
 
     private static void BuildBackground(Transform parent)
     {
-        GameObject bg = FindOrCreateChild(parent, "Background", typeof(SpriteRenderer));
+        GameObject bg = FindOrCreateChild(parent, "Background", out bool created, typeof(SpriteRenderer));
 
         var sr = bg.GetComponent<SpriteRenderer>();
-        sr.sprite = backgroundSprite != null ? backgroundSprite : boxSprite;
-        sr.color = backgroundSprite != null ? Color.white : new Color(0.10f, 0.12f, 0.16f, 1f);
         sr.sortingOrder = -10;
-        // drawMode+size로 크기를 고정해서, 배경 이미지의 실제 픽셀 크기/스케일과 무관하게 항상 20x12 월드 유닛으로 보이게 한다.
-        sr.drawMode = SpriteDrawMode.Sliced;
-        sr.size = new Vector2(20f, 12f);
-        bg.transform.position = new Vector3(0f, 0f, 0f);
-        bg.transform.localScale = Vector3.one;
+        // 처음 생성될 때만 기본 이미지/크기/배치를 적용한다 - 이미 있는 오브젝트는 인스펙터에서 바꾼
+        // 이미지와 크기(수동으로 조절한 값 포함)를 그대로 유지.
+        if (created)
+        {
+            sr.sprite = backgroundSprite != null ? backgroundSprite : boxSprite;
+            sr.color = backgroundSprite != null ? Color.white : new Color(0.10f, 0.12f, 0.16f, 1f);
+            // drawMode+size로 크기를 고정해서, 배경 이미지의 실제 픽셀 크기/스케일과 무관하게 항상 20x12 월드 유닛으로 보이게 한다.
+            sr.drawMode = SpriteDrawMode.Sliced;
+            sr.size = new Vector2(20f, 12f);
+            bg.transform.position = new Vector3(0f, 0f, 0f);
+            bg.transform.localScale = Vector3.one;
+        }
     }
 
     private static void BuildFloorDivider(Transform parent)
@@ -170,128 +164,6 @@ public static class CorridorSceneBuilder
         sr.sortingOrder = -5;
         divider.transform.position = new Vector3(0f, (UpperFloorY + LowerFloorY) * 0.5f, 0f);
         divider.transform.localScale = new Vector3(18f, 0.08f, 1f);
-    }
-
-    private static void BuildDoors(Transform parent, string floorName, float floorY, float[] doorX)
-    {
-        const float targetHeight = 4.05f; // 2.7의 1.5배
-        const float verticalOffset = -0.3f; // 바닥선보다 살짝 더 아래로 내림
-        Vector2 nativeSize = SpriteNativeSize(doorSprite);
-        float scale = targetHeight / nativeSize.y;
-
-        for (int i = 0; i < doorX.Length; i++)
-        {
-            string name = $"Door_{floorName}{i + 1}";
-            GameObject door = FindOrCreateChild(parent, name, out bool created, typeof(SpriteRenderer), typeof(BoxCollider2D), typeof(Interactable));
-
-            var sr = door.GetComponent<SpriteRenderer>();
-            sr.sprite = doorSprite;
-            sr.color = Color.white;
-
-            if (created)
-            {
-                // floorY는 바닥선(캐릭터가 서는 높이) 기준이므로, 스프라이트 중심이 아니라 "아래쪽 끝"이 floorY에 오도록 절반 높이만큼 올려서 배치한다.
-                // 배치는 처음 생성될 때만 계산하고, 이후에는 씬에 저장된 좌표(수동으로 옮긴 값 포함)를 그대로 유지한다.
-                door.transform.position = new Vector3(doorX[i], floorY + targetHeight * 0.5f + verticalOffset, 0f);
-                door.transform.localScale = new Vector3(scale, scale, 1f);
-
-                var col = door.GetComponent<BoxCollider2D>();
-                col.isTrigger = true;
-                col.size = nativeSize;
-            }
-
-            GameObject prompt = BuildPrompt(door.transform, "Prompt", "Space", targetHeight * 0.5f + 0.3f);
-
-            var interactable = door.GetComponent<Interactable>();
-            SerializedObject so = new SerializedObject(interactable);
-            so.FindProperty("interactionLabel").stringValue = $"{floorName} {i + 1}번 방 문";
-            so.FindProperty("promptRoot").objectReferenceValue = prompt;
-            so.ApplyModifiedProperties();
-        }
-    }
-
-    private static void BuildLadder(Transform parent, string name, float x)
-    {
-        GameObject ladder = FindOrCreateChild(parent, name, out bool created, typeof(SpriteRenderer), typeof(BoxCollider2D));
-
-        // 예전에 붙었던 범용 Interactable(Space로 로그만 찍는 용도)은 사다리에서는 더 이상 쓰지 않는다.
-        Interactable oldInteractable = ladder.GetComponent<Interactable>();
-        if (oldInteractable != null)
-        {
-            Object.DestroyImmediate(oldInteractable);
-        }
-
-        LadderClimb climb = ladder.GetComponent<LadderClimb>();
-        if (climb == null)
-        {
-            climb = ladder.AddComponent<LadderClimb>();
-        }
-
-        var sr = ladder.GetComponent<SpriteRenderer>();
-        sr.sprite = ladderSprite;
-        sr.color = Color.white;
-
-        // 사다리는 아래층 바닥(LowerFloorY)에 딱 닿게 하고, 위층 바닥(UpperFloorY)보다 살짝(topOverhang) 위까지 뻗어서
-        // 실제로 위층 바닥까지 붙잡고 올라가는 것처럼 보이게 한다. (프롬프트 위치 계산에도 필요해서 매번 계산한다.)
-        const float topOverhang = 0.3f;
-        float bottomY = LowerFloorY;
-        float topY = UpperFloorY + topOverhang;
-        float targetHeight = topY - bottomY;
-
-        if (created)
-        {
-            Vector2 nativeSize = SpriteNativeSize(ladderSprite);
-            float scale = targetHeight / nativeSize.y;
-
-            ladder.transform.position = new Vector3(x, (topY + bottomY) * 0.5f, 0f);
-            ladder.transform.localScale = new Vector3(scale, scale, 1f);
-
-            var col = ladder.GetComponent<BoxCollider2D>();
-            col.isTrigger = true;
-            col.size = nativeSize;
-        }
-
-        // 위/아래 화살표는 각각 사다리를 타기 시작하는 위치(아래쪽 끝 / 위쪽 끝) 근처에 보이도록 배치한다.
-        GameObject promptUp = BuildPrompt(ladder.transform, "PromptUp", "▲", -targetHeight * 0.5f + 0.6f);
-        GameObject promptDown = BuildPrompt(ladder.transform, "PromptDown", "▼", targetHeight * 0.5f - 0.6f);
-
-        SerializedObject so = new SerializedObject(climb);
-        so.FindProperty("lowerY").floatValue = LowerFloorY + PlayerTargetHeight * 0.5f;
-        so.FindProperty("upperY").floatValue = UpperFloorY + PlayerTargetHeight * 0.5f;
-        so.FindProperty("promptUp").objectReferenceValue = promptUp;
-        so.FindProperty("promptDown").objectReferenceValue = promptDown;
-        so.ApplyModifiedProperties();
-    }
-
-    private static GameObject BuildPrompt(Transform parent, string childName, string label, float worldYOffset)
-    {
-        Transform existing = parent.Find(childName);
-        GameObject prompt = existing != null ? existing.gameObject : new GameObject(childName, typeof(TextMesh));
-        prompt.transform.SetParent(parent, false);
-
-        // 부모(문/사다리)가 크게 스케일된 상태라 로컬 좌표를 그대로 쓰면 화면 밖으로 튕겨나간다.
-        // 부모의 스케일로 나눠서 항상 일정한 월드 단위 오프셋/크기로 보이게 보정한다.
-        const float worldSize = 0.35f;
-        Vector3 parentScale = parent.lossyScale;
-        float safeScaleX = Mathf.Max(Mathf.Abs(parentScale.x), 0.0001f);
-        float safeScaleY = Mathf.Max(Mathf.Abs(parentScale.y), 0.0001f);
-
-        prompt.transform.localPosition = new Vector3(0f, worldYOffset / safeScaleY, 0f);
-        prompt.transform.localScale = new Vector3(worldSize / safeScaleX, worldSize / safeScaleY, 1f);
-
-        var textMesh = prompt.GetComponent<TextMesh>();
-        textMesh.text = label;
-        textMesh.anchor = TextAnchor.MiddleCenter;
-        textMesh.alignment = TextAlignment.Center;
-        textMesh.color = Color.white;
-        textMesh.fontSize = 48;
-        textMesh.characterSize = 0.1f;
-
-        var renderer = prompt.GetComponent<MeshRenderer>();
-        renderer.sortingOrder = 10;
-
-        prompt.SetActive(false);
-        return prompt;
     }
 
     private static Transform BuildPlayer(Transform parent)
@@ -326,12 +198,8 @@ public static class CorridorSceneBuilder
         so.FindProperty("minX").floatValue = CorridorMinX;
         so.FindProperty("maxX").floatValue = CorridorMaxX;
         so.FindProperty("idleSprite").objectReferenceValue = playerSprite;
-        SerializedProperty walkFramesProp = so.FindProperty("walkFrames");
-        walkFramesProp.arraySize = playerWalkSprites?.Length ?? 0;
-        for (int i = 0; i < walkFramesProp.arraySize; i++)
-        {
-            walkFramesProp.GetArrayElementAtIndex(i).objectReferenceValue = playerWalkSprites[i];
-        }
+        AssignFrames(so, "leftFrames", playerLeftSprites);
+        AssignFrames(so, "rightFrames", playerRightSprites);
         so.ApplyModifiedProperties();
 
         return player.transform;
@@ -708,52 +576,26 @@ public static class CorridorSceneBuilder
         return sprite.rect.size / sprite.pixelsPerUnit;
     }
 
-    private static Sprite[] EnsureSlicedSprites(string assetPath, (string name, Rect rect)[] frames, float pixelsPerUnit)
+    private static void AssignFrames(SerializedObject so, string propertyName, Sprite[] frames)
     {
-        TextureImporter importer = AssetImporter.GetAtPath(assetPath) as TextureImporter;
-        if (importer == null)
+        SerializedProperty prop = so.FindProperty(propertyName);
+        prop.arraySize = frames?.Length ?? 0;
+        for (int i = 0; i < prop.arraySize; i++)
         {
-            Debug.LogError($"텍스처를 찾을 수 없음: {assetPath}");
-            return new Sprite[frames.Length];
+            prop.GetArrayElementAtIndex(i).objectReferenceValue = frames[i];
         }
+    }
 
-        var expectedNames = frames.Select(f => f.name).ToArray();
-
-        // 기존 importer.spritesheet와 병합하지 않고, 우리가 원하는 프레임 목록(+겹치지 않는 기존 프레임 보존)을
-        // 항상 통째로 새로 만들어서 덮어쓴다. 병합 방식은 반영이 안 되는 경우가 있어 결정론적으로 단순화함.
-        var desired = frames.Select(f => new SpriteMetaData
+    private static Sprite[] ResolveNamedFrames(Sprite[] allSprites, string[] names)
+    {
+        var result = new Sprite[names.Length];
+        for (int i = 0; i < names.Length; i++)
         {
-            name = f.name,
-            rect = f.rect,
-            alignment = (int)SpriteAlignment.Center,
-            pivot = new Vector2(0.5f, 0.5f)
-        }).ToList();
-
-        if (importer.spritesheet != null)
-        {
-            foreach (var existing in importer.spritesheet)
+            result[i] = allSprites.FirstOrDefault(s => s.name == names[i]);
+            if (result[i] == null)
             {
-                if (!expectedNames.Contains(existing.name))
-                {
-                    desired.Add(existing);
-                }
+                Debug.LogWarning($"[CorridorSceneBuilder] {names[i]} 프레임을 찾지 못함");
             }
-        }
-
-        importer.textureType = TextureImporterType.Sprite;
-        importer.spriteImportMode = SpriteImportMode.Multiple;
-        importer.spritePixelsPerUnit = pixelsPerUnit;
-        importer.filterMode = FilterMode.Point;
-        importer.spritesheet = desired.ToArray();
-        EditorUtility.SetDirty(importer);
-        importer.SaveAndReimport();
-        AssetDatabase.Refresh(ImportAssetOptions.ForceUpdate);
-
-        var sprites = AssetDatabase.LoadAllAssetsAtPath(assetPath).OfType<Sprite>().ToList();
-        var result = new Sprite[frames.Length];
-        for (int i = 0; i < frames.Length; i++)
-        {
-            result[i] = sprites.FirstOrDefault(s => s.name == expectedNames[i]);
         }
         return result;
     }

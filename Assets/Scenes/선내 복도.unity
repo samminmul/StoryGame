@@ -277,6 +277,18 @@ MonoBehaviour:
   leftExitDestination: OO
   rightExitDestination: OO
   upperRightExitScene: "\uC120\uC7A5\uC2E4"
+  frameDuration: 0.15
+  idleSprite: {fileID: -6296204197391552756, guid: 28683f3187fa087478c88e31bcca16a9, type: 3}
+  leftFrames:
+  - {fileID: -4901810646901568106, guid: 28683f3187fa087478c88e31bcca16a9, type: 3}
+  - {fileID: 1802617797768903919, guid: 28683f3187fa087478c88e31bcca16a9, type: 3}
+  - {fileID: -8270301003743469690, guid: 28683f3187fa087478c88e31bcca16a9, type: 3}
+  - {fileID: -4566485384808549757, guid: 28683f3187fa087478c88e31bcca16a9, type: 3}
+  rightFrames:
+  - {fileID: -8631258866545424208, guid: 28683f3187fa087478c88e31bcca16a9, type: 3}
+  - {fileID: 7092823428455541583, guid: 28683f3187fa087478c88e31bcca16a9, type: 3}
+  - {fileID: 1077604602189546775, guid: 28683f3187fa087478c88e31bcca16a9, type: 3}
+  - {fileID: 905642996328374825, guid: 28683f3187fa087478c88e31bcca16a9, type: 3}
 --- !u!61 &139869286
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -399,7 +411,7 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 1
   m_MaskInteraction: 0
-  m_Sprite: {fileID: -845453651175416010, guid: 7ee424874400c9d48b4a8b7332a0170e, type: 3}
+  m_Sprite: {fileID: -6296204197391552756, guid: 28683f3187fa087478c88e31bcca16a9, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
