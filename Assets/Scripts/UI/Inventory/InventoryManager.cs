@@ -3,6 +3,7 @@ using NUnit.Framework;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.UI;
+using DG.Tweening;
 
 
 public class InventoryManager : MonoBehaviour
@@ -10,12 +11,16 @@ public class InventoryManager : MonoBehaviour
     public List<Item> items = new List<Item>();
     private List<GameObject> slots = new List<GameObject>();
 
-    [SerializeField] private Transform Inventory;
+    [SerializeField] private Transform inventoryPanel;
+    [SerializeField] private Transform slotRow;
     [SerializeField] private GameObject slotPrefab;
     [SerializeField] private int slotSize = 10;
     [SerializeField] private int slotUIDistance = 80;
+    [SerializeField] private float inventoryMoveDist;
 
     private int slotPage = 0;
+    private bool isInventoryOpen = false;
+       
 
     public int SlotSize { get { return slotSize; } }
     public int SlotUIDistance { get { return slotUIDistance; } }
@@ -31,7 +36,7 @@ public class InventoryManager : MonoBehaviour
     {
         for (int i = 0; i < slotSize; i++)
         {
-            GameObject slot = Instantiate(slotPrefab, Inventory);
+            GameObject slot = Instantiate(slotPrefab, slotRow);
             
             slot.GetComponent<InventorySlot>().Initialize(i);
             slots.Add(slot);
@@ -125,6 +130,34 @@ public class InventoryManager : MonoBehaviour
         if (slotPage > 0)
         {
             setSlotPage(slotPage - 1);
+        }
+    }
+
+    private void OpenSlot()
+    {
+        inventoryPanel.gameObject.SetActive(true);
+        inventoryPanel.GetComponent<RectTransform>().DOAnchorPosY(inventoryMoveDist, 0.5f).SetEase(Ease.OutBack);
+        RefreshAllSlots();
+    }
+
+    private void CloseSlot()
+    {
+        inventoryPanel.GetComponent<RectTransform>().DOAnchorPosY(-inventoryMoveDist, 0.5f).SetEase(Ease.InBack).OnComplete(() =>
+        {
+            inventoryPanel.gameObject.SetActive(false);
+        });
+    }
+
+    public void ToggleInventory()
+    {
+        isInventoryOpen = !isInventoryOpen;
+        if (isInventoryOpen)
+        {
+            OpenSlot();
+        }
+        else
+        {
+            CloseSlot();
         }
     }
 }
