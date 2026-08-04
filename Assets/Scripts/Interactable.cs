@@ -8,6 +8,7 @@ public class Interactable : MonoBehaviour
     [SerializeField] private GameObject promptRoot;
     [SerializeField] private SpriteRenderer spriteRenderer;
     [SerializeField] private Sprite highlightSprite;
+    [SerializeField] private GameObject roomInteriorUI;
 
     private bool playerInRange;
     private Sprite normalSprite;
@@ -41,6 +42,10 @@ public class Interactable : MonoBehaviour
         if (keyboard != null && keyboard.spaceKey.wasPressedThisFrame)
         {
             Debug.Log($"{interactionLabel}와(과) 상호작용함");
+            if (roomInteriorUI != null)
+            {
+                roomInteriorUI.SetActive(true);
+            }
         }
     }
 
