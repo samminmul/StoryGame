@@ -8,6 +8,8 @@ public class CorridorHUDController : MonoBehaviour
     [SerializeField] private GameObject menuOverlay;
     [SerializeField] private GameObject mapOverlay;
     [SerializeField] private GameObject bagOverlay;
+    [SerializeField] private GameObject settingsOverlay;
+    [SerializeField] private GameObject settingsButton;
 
     private void Start()
     {
@@ -21,7 +23,7 @@ public class CorridorHUDController : MonoBehaviour
     {
         if (menuOverlay != null)
         {
-            menuOverlay.SetActive(true);
+            menuOverlay.SetActive(!menuOverlay.activeSelf);
         }
     }
 
@@ -35,7 +37,34 @@ public class CorridorHUDController : MonoBehaviour
 
     public void OnClickMenuSettings()
     {
-        Debug.Log("설정 열기");
+        if (settingsOverlay != null)
+        {
+            settingsOverlay.SetActive(true);
+        }
+        if (settingsButton != null)
+        {
+            settingsButton.SetActive(false);
+        }
+        if (menuOverlay != null)
+        {
+            menuOverlay.SetActive(false);
+        }
+    }
+
+    public void OnClickCloseSettings()
+    {
+        if (settingsOverlay != null)
+        {
+            settingsOverlay.SetActive(false);
+        }
+        if (settingsButton != null)
+        {
+            settingsButton.SetActive(true);
+        }
+        if (menuOverlay != null)
+        {
+            menuOverlay.SetActive(true);
+        }
     }
 
     public void OnClickMenuSave()

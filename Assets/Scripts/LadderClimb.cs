@@ -8,12 +8,27 @@ public class LadderClimb : MonoBehaviour
     [SerializeField] private float upperY;
     [SerializeField] private GameObject promptUp;
     [SerializeField] private GameObject promptDown;
+    [SerializeField] private SpriteRenderer spriteRenderer;
+    [SerializeField] private Sprite highlightSprite;
 
     private Transform player;
+    private Sprite normalSprite;
 
     private void Reset()
     {
         GetComponent<Collider2D>().isTrigger = true;
+    }
+
+    private void Awake()
+    {
+        if (spriteRenderer == null)
+        {
+            spriteRenderer = GetComponent<SpriteRenderer>();
+        }
+        if (spriteRenderer != null)
+        {
+            normalSprite = spriteRenderer.sprite;
+        }
     }
 
     private void Update()
@@ -64,6 +79,10 @@ public class LadderClimb : MonoBehaviour
             return;
         }
         player = other.transform;
+        if (spriteRenderer != null && highlightSprite != null)
+        {
+            spriteRenderer.sprite = highlightSprite;
+        }
     }
 
     private void OnTriggerExit2D(Collider2D other)
@@ -80,6 +99,10 @@ public class LadderClimb : MonoBehaviour
         if (promptDown != null)
         {
             promptDown.SetActive(false);
+        }
+        if (spriteRenderer != null && highlightSprite != null)
+        {
+            spriteRenderer.sprite = normalSprite;
         }
     }
 }

@@ -10,8 +10,8 @@ public class CorridorPlayerController : MonoBehaviour
     [SerializeField] private float maxX = 8.5f;
     [SerializeField] private float upperFloorSplitY = 0f;
     [SerializeField] private string leftExitDestination = "OO";
-    [SerializeField] private string rightExitDestination = "OO";
-    [SerializeField] private string upperRightExitScene = "선장실";
+    [SerializeField] private string upperExitScene = "갑판";
+    [SerializeField] private string lowerRightExitScene = "선장실";
     [SerializeField] private float frameDuration = 0.15f;
     [SerializeField] private Sprite idleSprite;
     [SerializeField] private Sprite[] leftFrames;
@@ -57,8 +57,16 @@ public class CorridorPlayerController : MonoBehaviour
         {
             if (!loggedLeftExit)
             {
-                Debug.Log($"복도 왼쪽 끝 도달: {leftExitDestination}로 이동");
                 loggedLeftExit = true;
+                if (position.y > upperFloorSplitY)
+                {
+                    // 2층(위층) 왼쪽 끝은 갑판 씬으로 전환한다.
+                    SceneManager.LoadScene(upperExitScene);
+                }
+                else
+                {
+                    Debug.Log($"복도 왼쪽 끝 도달: {leftExitDestination}로 이동");
+                }
             }
         }
         else
@@ -73,12 +81,13 @@ public class CorridorPlayerController : MonoBehaviour
                 loggedRightExit = true;
                 if (position.y > upperFloorSplitY)
                 {
-                    // 2층(위층) 오른쪽 끝은 실제로 선장실 씬으로 전환한다.
-                    SceneManager.LoadScene(upperRightExitScene);
+                    // 2층(위층) 오른쪽 끝은 갑판 씬으로 전환한다.
+                    SceneManager.LoadScene(upperExitScene);
                 }
                 else
                 {
-                    Debug.Log($"복도 오른쪽 끝 도달: {rightExitDestination}로 이동");
+                    // 1층(아래층) 오른쪽 끝은 선장실 씬으로 전환한다.
+                    SceneManager.LoadScene(lowerRightExitScene);
                 }
             }
         }

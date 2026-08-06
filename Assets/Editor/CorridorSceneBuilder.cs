@@ -272,14 +272,18 @@ public static class CorridorSceneBuilder
         titleRT.anchoredPosition = Vector2.zero;
         titleRT.sizeDelta = new Vector2(400f, 60f);
 
-        Button menuBtn = CreateHudButton(topBar.transform, "MenuButton", "≡", 44);
+        Button menuBtn = CreateHudButton(topBar.transform, "MenuButton", "≡", 44, out bool menuBtnCreated);
         var menuRT = menuBtn.GetComponent<RectTransform>();
         menuRT.anchorMin = new Vector2(1f, 0.5f);
         menuRT.anchorMax = new Vector2(1f, 0.5f);
         menuRT.pivot = new Vector2(1f, 0.5f);
         menuRT.anchoredPosition = new Vector2(-24f, 0f);
         menuRT.sizeDelta = new Vector2(64f, 64f);
-        UnityEventTools.AddPersistentListener(menuBtn.onClick, hud.OnClickMenu);
+        // 처음 생성될 때만 리스너를 붙인다 - 이미 있는 버튼에 매번 붙이면 클릭할 때마다 중복 호출된다.
+        if (menuBtnCreated)
+        {
+            UnityEventTools.AddPersistentListener(menuBtn.onClick, hud.OnClickMenu);
+        }
 
         GameObject bottomBar = FindOrCreateChild(canvasGO.transform, "BottomBar", typeof(Image));
         var bottomBarRT = bottomBar.GetComponent<RectTransform>();
@@ -290,34 +294,51 @@ public static class CorridorSceneBuilder
         bottomBarRT.sizeDelta = new Vector2(0f, 80f);
         bottomBar.GetComponent<Image>().color = new Color(0.08f, 0.09f, 0.12f, 0.9f);
 
-        Button bagBtn = CreateHudButton(bottomBar.transform, "BagButton", "가방", 26);
+        Button bagBtn = CreateHudButton(bottomBar.transform, "BagButton", "가방", 26, out bool bagBtnCreated);
         var bagRT = bagBtn.GetComponent<RectTransform>();
         bagRT.anchorMin = new Vector2(0f, 0.5f);
         bagRT.anchorMax = new Vector2(0f, 0.5f);
         bagRT.pivot = new Vector2(0f, 0.5f);
         bagRT.anchoredPosition = new Vector2(24f, 0f);
         bagRT.sizeDelta = new Vector2(140f, 56f);
-        UnityEventTools.AddPersistentListener(bagBtn.onClick, hud.OnClickBag);
+        if (bagBtnCreated)
+        {
+            UnityEventTools.AddPersistentListener(bagBtn.onClick, hud.OnClickBag);
+        }
 
-        Button mapBtn = CreateHudButton(bottomBar.transform, "MapButton", "지도", 26);
+        Button mapBtn = CreateHudButton(bottomBar.transform, "MapButton", "지도", 26, out bool mapBtnCreated);
         var mapRT = mapBtn.GetComponent<RectTransform>();
         mapRT.anchorMin = new Vector2(1f, 0.5f);
         mapRT.anchorMax = new Vector2(1f, 0.5f);
         mapRT.pivot = new Vector2(1f, 0.5f);
         mapRT.anchoredPosition = new Vector2(-24f, 0f);
         mapRT.sizeDelta = new Vector2(140f, 56f);
-        UnityEventTools.AddPersistentListener(mapBtn.onClick, hud.OnClickMap);
+        if (mapBtnCreated)
+        {
+            UnityEventTools.AddPersistentListener(mapBtn.onClick, hud.OnClickMap);
+        }
 
         GameObject menuOverlay = BuildMenuOverlay(canvasGO.transform, hud);
         GameObject mapOverlay = BuildMapOverlay(canvasGO.transform, hud);
         GameObject bagOverlay = BuildBagOverlay(canvasGO.transform);
 
+        // 이미 연결되어 있는 필드는 덮어쓰지 않는다 - 손으로 다른 오버레이(예: 커스텀 메뉴창)로
+        // 바꿔놓은 걸 재실행할 때마다 원래 자동 생성 오버레이로 되돌리면 안 된다.
         SerializedObject hudSO = new SerializedObject(hud);
-        hudSO.FindProperty("dayText").objectReferenceValue = dayText;
-        hudSO.FindProperty("menuOverlay").objectReferenceValue = menuOverlay;
-        hudSO.FindProperty("mapOverlay").objectReferenceValue = mapOverlay;
-        hudSO.FindProperty("bagOverlay").objectReferenceValue = bagOverlay;
+        SetIfUnassigned(hudSO, "dayText", dayText);
+        SetIfUnassigned(hudSO, "menuOverlay", menuOverlay);
+        SetIfUnassigned(hudSO, "mapOverlay", mapOverlay);
+        SetIfUnassigned(hudSO, "bagOverlay", bagOverlay);
         hudSO.ApplyModifiedProperties();
+    }
+
+    private static void SetIfUnassigned(SerializedObject so, string propertyName, Object value)
+    {
+        SerializedProperty prop = so.FindProperty(propertyName);
+        if (prop.objectReferenceValue == null)
+        {
+            prop.objectReferenceValue = value;
+        }
     }
 
     private static GameObject BuildMenuOverlay(Transform canvasParent, CorridorHUDController hud)
@@ -349,14 +370,17 @@ public static class CorridorSceneBuilder
         titleRT.anchoredPosition = new Vector2(24f, -20f);
         titleRT.sizeDelta = new Vector2(200f, 50f);
 
-        Button closeBtn = CreateMenuButton(panel.transform, "CloseButton", "X", 22);
+        Button closeBtn = CreateMenuButton(panel.transform, "CloseButton", "X", 22, out bool closeBtnCreated);
         var closeRT = closeBtn.GetComponent<RectTransform>();
         closeRT.anchorMin = new Vector2(1f, 1f);
         closeRT.anchorMax = new Vector2(1f, 1f);
         closeRT.pivot = new Vector2(1f, 1f);
         closeRT.anchoredPosition = new Vector2(-16f, -16f);
         closeRT.sizeDelta = new Vector2(44f, 44f);
-        UnityEventTools.AddPersistentListener(closeBtn.onClick, hud.OnClickCloseMenu);
+        if (closeBtnCreated)
+        {
+            UnityEventTools.AddPersistentListener(closeBtn.onClick, hud.OnClickCloseMenu);
+        }
 
         GameObject divider = FindOrCreateChild(panel.transform, "Divider", typeof(Image));
         var dividerRT = divider.GetComponent<RectTransform>();
@@ -383,17 +407,26 @@ public static class CorridorSceneBuilder
         layout.childForceExpandWidth = true;
         layout.childForceExpandHeight = false;
 
-        Button settingsBtn = CreateMenuButton(buttonList.transform, "SettingsButton", "설정", 26);
+        Button settingsBtn = CreateMenuButton(buttonList.transform, "SettingsButton", "설정", 26, out bool settingsBtnCreated);
         settingsBtn.GetComponent<LayoutElement>().preferredHeight = 56f;
-        UnityEventTools.AddPersistentListener(settingsBtn.onClick, hud.OnClickMenuSettings);
+        if (settingsBtnCreated)
+        {
+            UnityEventTools.AddPersistentListener(settingsBtn.onClick, hud.OnClickMenuSettings);
+        }
 
-        Button saveBtn = CreateMenuButton(buttonList.transform, "SaveButton", "저장", 26);
+        Button saveBtn = CreateMenuButton(buttonList.transform, "SaveButton", "저장", 26, out bool saveBtnCreated);
         saveBtn.GetComponent<LayoutElement>().preferredHeight = 56f;
-        UnityEventTools.AddPersistentListener(saveBtn.onClick, hud.OnClickMenuSave);
+        if (saveBtnCreated)
+        {
+            UnityEventTools.AddPersistentListener(saveBtn.onClick, hud.OnClickMenuSave);
+        }
 
-        Button exitBtn = CreateMenuButton(buttonList.transform, "ExitButton", "나가기", 26);
+        Button exitBtn = CreateMenuButton(buttonList.transform, "ExitButton", "나가기", 26, out bool exitBtnCreated);
         exitBtn.GetComponent<LayoutElement>().preferredHeight = 56f;
-        UnityEventTools.AddPersistentListener(exitBtn.onClick, hud.OnClickMenuExit);
+        if (exitBtnCreated)
+        {
+            UnityEventTools.AddPersistentListener(exitBtn.onClick, hud.OnClickMenuExit);
+        }
 
         overlay.SetActive(false);
         return overlay;
@@ -428,14 +461,17 @@ public static class CorridorSceneBuilder
         mapImage.sprite = mapSprite;
         mapImage.preserveAspect = true;
 
-        Button closeBtn = CreateMenuButton(panel.transform, "CloseButton", "X", 22);
+        Button closeBtn = CreateMenuButton(panel.transform, "CloseButton", "X", 22, out bool closeBtnCreated);
         var closeRT = closeBtn.GetComponent<RectTransform>();
         closeRT.anchorMin = new Vector2(1f, 1f);
         closeRT.anchorMax = new Vector2(1f, 1f);
         closeRT.pivot = new Vector2(1f, 1f);
         closeRT.anchoredPosition = new Vector2(-16f, -16f);
         closeRT.sizeDelta = new Vector2(44f, 44f);
-        UnityEventTools.AddPersistentListener(closeBtn.onClick, hud.OnClickCloseMap);
+        if (closeBtnCreated)
+        {
+            UnityEventTools.AddPersistentListener(closeBtn.onClick, hud.OnClickCloseMap);
+        }
 
         overlay.SetActive(false);
         return overlay;
@@ -510,7 +546,12 @@ public static class CorridorSceneBuilder
 
     private static Button CreateMenuButton(Transform parent, string name, string label, int fontSize)
     {
-        GameObject go = FindOrCreateChild(parent, name, typeof(Image), typeof(Button), typeof(LayoutElement));
+        return CreateMenuButton(parent, name, label, fontSize, out _);
+    }
+
+    private static Button CreateMenuButton(Transform parent, string name, string label, int fontSize, out bool created)
+    {
+        GameObject go = FindOrCreateChild(parent, name, out created, typeof(Image), typeof(Button), typeof(LayoutElement));
         go.GetComponent<Image>().color = Color.white;
 
         GameObject textGO = FindOrCreateChild(go.transform, "Text", typeof(Text));
@@ -552,7 +593,12 @@ public static class CorridorSceneBuilder
 
     private static Button CreateHudButton(Transform parent, string name, string label, int fontSize)
     {
-        GameObject go = FindOrCreateChild(parent, name, typeof(Image), typeof(Button));
+        return CreateHudButton(parent, name, label, fontSize, out _);
+    }
+
+    private static Button CreateHudButton(Transform parent, string name, string label, int fontSize, out bool created)
+    {
+        GameObject go = FindOrCreateChild(parent, name, out created, typeof(Image), typeof(Button));
         go.GetComponent<Image>().color = new Color(1f, 1f, 1f, 0.12f);
 
         GameObject textGO = FindOrCreateChild(go.transform, "Text", typeof(Text));
