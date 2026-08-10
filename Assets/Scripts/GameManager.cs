@@ -6,7 +6,6 @@ public class GameManager : MonoBehaviour
     public static GameManager Instance;
     private int day = 1;
 
-    private List<Dialogue> dialogues = new List<Dialogue>();
 
     void Awake()
     {
@@ -19,6 +18,12 @@ public class GameManager : MonoBehaviour
         {
             Destroy(gameObject);
         }
+    }
+
+    public void SetDay(int newDay)
+    {
+        day = newDay;
+        Debug.Log($"Day set to {day}");
     }
 
     public void NextDay()
