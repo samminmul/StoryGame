@@ -8,9 +8,6 @@ public class EventManager : MonoBehaviour
 {
     private EventDatabase eventDatabase;
 
-    private Dictionary<string, List<EventData>> events = new();
-    public IReadOnlyDictionary<string, List<EventData>> Events => events;
-
     private Dictionary<string, Action<EventData>> eventActions;
     [SerializeField]
     private string initialEventName;
@@ -33,7 +30,8 @@ public class EventManager : MonoBehaviour
 
     private void Initialize()
     {
-        eventDatabase = GetComponent<EventDatabase>();
+        eventDatabase = GetComponent<EventDatabase>(); 
+        //eventDatabase should be attached to the same GameObject
         eventActions = new Dictionary<string, Action<EventData>>
         {
             { "day", ExecuteDay },
@@ -53,18 +51,16 @@ public class EventManager : MonoBehaviour
         TriggerEvent(initialEventName);
     }
 
-    public void AddEvent(string eventSetID, EventData newEvent)
-    {
-        if (!events.ContainsKey(eventSetID))
-        {
-            events[eventSetID] = new List<EventData>();
-        }
-        events[eventSetID].Add(newEvent);
-    }
+
 
     public void TriggerEvent(string eventSetID)
     {
-        foreach (var eventObj in events[eventSetID])
+        if (!eventDatabase.Events.ContainsKey(eventSetID))
+        {
+            Debug.LogWarning($"Event set ID '{eventSetID}' not found in the database.");
+            return;
+        }
+        foreach (var eventObj in eventDatabase.Events[eventSetID])
         {
            if (eventActions.TryGetValue(eventObj.eventType, out var action))
             {
