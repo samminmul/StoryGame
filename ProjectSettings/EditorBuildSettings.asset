@@ -18,8 +18,11 @@ EditorBuildSettings:
     path: Assets/Scenes/SampleScene.unity
     guid: ab50f6b07a4163249b36b1a99c50e85e
   - enabled: 1
-    path: "Assets/Scenes/\uAC11\uD310.unity"
+    path: "Assets/Scenes/\uAC11\uD310 \uC55E.unity"
     guid: 40a8f67d3d4ea924c95a77e63804d5fc
+  - enabled: 1
+    path: "Assets/Scenes/\uAC11\uD310 \uB4A4.unity"
+    guid: 3e6706a7d83017e4daf4d32b8e31424b
   m_configObjects:
     com.unity.dt.app-ui: {fileID: 11400000, guid: 1b1c20d82303e4b5781c3ef50ac1449f, type: 2}
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}

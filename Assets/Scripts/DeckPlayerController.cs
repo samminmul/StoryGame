@@ -13,6 +13,9 @@ public class DeckPlayerController : MonoBehaviour
     [SerializeField] private Sprite[] rightFrames;
 
     private SpriteRenderer spriteRenderer;
+    private BoxCollider2D boxCollider;
+    private Vector2 colliderWorldSize;
+    private Vector2 colliderWorldOffset;
     private float frameTimer;
     private int frameIndex;
     private Sprite[] currentFrames;
@@ -20,6 +23,12 @@ public class DeckPlayerController : MonoBehaviour
     private void Awake()
     {
         spriteRenderer = GetComponent<SpriteRenderer>();
+        boxCollider = GetComponent<BoxCollider2D>();
+        if (boxCollider != null)
+        {
+            colliderWorldSize = boxCollider.bounds.size;
+            colliderWorldOffset = (Vector2)boxCollider.bounds.center - (Vector2)transform.position;
+        }
     }
 
     private void Update()
@@ -48,9 +57,46 @@ public class DeckPlayerController : MonoBehaviour
             direction.y -= 1f;
         }
 
-        transform.position += (Vector3)(direction.normalized * moveSpeed * Time.deltaTime);
+        Vector2 delta = direction.normalized * moveSpeed * Time.deltaTime;
+        TryMove(new Vector3(delta.x, 0f, 0f));
+        TryMove(new Vector3(0f, delta.y, 0f));
 
         UpdateAnimation(direction);
+    }
+
+    // 건물 등 트리거가 아닌 콜라이더를 향해 이동하려는 축만 막고, 나머지 축은 그대로 이동시켜
+    // 벽을 따라 미끄러지듯 움직이게 한다.
+    private void TryMove(Vector3 delta)
+    {
+        if (delta == Vector3.zero)
+        {
+            return;
+        }
+
+        Vector3 targetPosition = transform.position + delta;
+
+        if (boxCollider != null && IsBlocked(targetPosition))
+        {
+            return;
+        }
+
+        transform.position = targetPosition;
+    }
+
+    private bool IsBlocked(Vector3 targetPosition)
+    {
+        Vector2 targetCenter = (Vector2)targetPosition + colliderWorldOffset;
+
+        Collider2D[] hits = Physics2D.OverlapBoxAll(targetCenter, colliderWorldSize, 0f);
+        foreach (Collider2D hit in hits)
+        {
+            if (hit == boxCollider || hit.isTrigger)
+            {
+                continue;
+            }
+            return true;
+        }
+        return false;
     }
 
     private void UpdateAnimation(Vector2 direction)

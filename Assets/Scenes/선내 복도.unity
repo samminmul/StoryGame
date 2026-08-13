@@ -275,8 +275,9 @@ MonoBehaviour:
   maxX: 8.5
   upperFloorSplitY: 0
   leftExitDestination: OO
-  rightExitDestination: OO
-  upperRightExitScene: "\uC120\uC7A5\uC2E4"
+  upperExitScene: "\uAC11\uD310 \uC55E"
+  upperLeftExitScene: "\uAC11\uD310 \uB4A4"
+  lowerRightExitScene: "\uC120\uC7A5\uC2E4"
   frameDuration: 0.15
   idleSprite: {fileID: -6296204197391552756, guid: 28683f3187fa087478c88e31bcca16a9, type: 3}
   leftFrames:
@@ -327,7 +328,7 @@ BoxCollider2D:
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0.5, y: 0.5}
-    oldSize: {x: 0.88, y: 1.92}
+    oldSize: {x: 4.3900003, y: 8.190001}
     newSize: {x: 0.88, y: 1.92}
     adaptiveTilingThreshold: 0.5
     drawMode: 0
@@ -511,7 +512,7 @@ SpriteRenderer:
   m_Size: {x: 0.16, y: 0.16}
   m_AdaptiveModeThreshold: 0.5
   m_SpriteTileMode: 0
-  m_WasSpriteAssigned: 1
+  m_WasSpriteAssigned: 0
   m_SpriteSortPoint: 0
   m_BlendShapeWeights: []
 --- !u!1 &301299963
@@ -667,7 +668,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6140e16cb5db289438a56befff15e222, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LadderClimb
   lowerY: -3.2
   upperY: 1.85
@@ -1631,6 +1632,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Interactable
   interactionLabel: "Upper 1\uBC88 \uBC29 \uBB38"
   promptRoot: {fileID: 1146375019}
+  spriteRenderer: {fileID: 0}
+  highlightSprite: {fileID: 0}
+  roomInteriorUI: {fileID: 0}
 --- !u!61 &923056183
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -1734,7 +1738,7 @@ SpriteRenderer:
   m_Size: {x: 0.53, y: 0.86}
   m_AdaptiveModeThreshold: 0.5
   m_SpriteTileMode: 0
-  m_WasSpriteAssigned: 1
+  m_WasSpriteAssigned: 0
   m_SpriteSortPoint: 0
   m_BlendShapeWeights: []
 --- !u!1 &972617461
@@ -1786,6 +1790,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Interactable
   interactionLabel: "Lower 3\uBC88 \uBC29 \uBB38"
   promptRoot: {fileID: 1796273227}
+  spriteRenderer: {fileID: 0}
+  highlightSprite: {fileID: 0}
+  roomInteriorUI: {fileID: 0}
 --- !u!61 &972617464
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -1889,7 +1896,7 @@ SpriteRenderer:
   m_Size: {x: 0.53, y: 0.86}
   m_AdaptiveModeThreshold: 0.5
   m_SpriteTileMode: 0
-  m_WasSpriteAssigned: 1
+  m_WasSpriteAssigned: 0
   m_SpriteSortPoint: 0
   m_BlendShapeWeights: []
 --- !u!1 &1011247842
@@ -1941,6 +1948,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Interactable
   interactionLabel: "Upper 2\uBC88 \uBC29 \uBB38"
   promptRoot: {fileID: 96386625}
+  spriteRenderer: {fileID: 0}
+  highlightSprite: {fileID: 0}
+  roomInteriorUI: {fileID: 0}
 --- !u!61 &1011247845
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -2044,7 +2054,7 @@ SpriteRenderer:
   m_Size: {x: 0.53, y: 0.86}
   m_AdaptiveModeThreshold: 0.5
   m_SpriteTileMode: 0
-  m_WasSpriteAssigned: 1
+  m_WasSpriteAssigned: 0
   m_SpriteSortPoint: 0
   m_BlendShapeWeights: []
 --- !u!1 &1045946125
@@ -2527,10 +2537,10 @@ MonoBehaviour:
         m_Mode: 0
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName:
+          m_ObjectArgumentAssemblyTypeName: 
           m_IntArgument: 0
           m_FloatArgument: 0
-          m_StringArgument:
+          m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
 --- !u!114 &1203683911
@@ -2620,6 +2630,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Interactable
   interactionLabel: "Lower 2\uBC88 \uBC29 \uBB38"
   promptRoot: {fileID: 429565687}
+  spriteRenderer: {fileID: 0}
+  highlightSprite: {fileID: 0}
+  roomInteriorUI: {fileID: 0}
 --- !u!61 &1203937113
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -2723,7 +2736,7 @@ SpriteRenderer:
   m_Size: {x: 0.53, y: 0.86}
   m_AdaptiveModeThreshold: 0.5
   m_SpriteTileMode: 0
-  m_WasSpriteAssigned: 1
+  m_WasSpriteAssigned: 0
   m_SpriteSortPoint: 0
   m_BlendShapeWeights: []
 --- !u!1 &1206589730
@@ -2852,6 +2865,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Interactable
   interactionLabel: "Upper 3\uBC88 \uBC29 \uBB38"
   promptRoot: {fileID: 424424669}
+  spriteRenderer: {fileID: 0}
+  highlightSprite: {fileID: 0}
+  roomInteriorUI: {fileID: 0}
 --- !u!61 &1244082320
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -2955,7 +2971,7 @@ SpriteRenderer:
   m_Size: {x: 0.53, y: 0.86}
   m_AdaptiveModeThreshold: 0.5
   m_SpriteTileMode: 0
-  m_WasSpriteAssigned: 1
+  m_WasSpriteAssigned: 0
   m_SpriteSortPoint: 0
   m_BlendShapeWeights: []
 --- !u!1 &1320718198
@@ -3068,6 +3084,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CorridorHUDController
   day: 17
   dayText: {fileID: 2056391105}
+  menuOverlay: {fileID: 0}
+  mapOverlay: {fileID: 0}
+  bagOverlay: {fileID: 0}
+  settingsOverlay: {fileID: 0}
+  settingsButton: {fileID: 0}
 --- !u!4 &1333255951
 Transform:
   m_ObjectHideFlags: 0
@@ -3132,6 +3153,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Interactable
   interactionLabel: "Lower 1\uBC88 \uBC29 \uBB38"
   promptRoot: {fileID: 723290441}
+  spriteRenderer: {fileID: 0}
+  highlightSprite: {fileID: 0}
+  roomInteriorUI: {fileID: 0}
 --- !u!61 &1437441412
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -3235,7 +3259,7 @@ SpriteRenderer:
   m_Size: {x: 0.53, y: 0.86}
   m_AdaptiveModeThreshold: 0.5
   m_SpriteTileMode: 0
-  m_WasSpriteAssigned: 1
+  m_WasSpriteAssigned: 0
   m_SpriteSortPoint: 0
   m_BlendShapeWeights: []
 --- !u!1 &1494780492
@@ -3766,6 +3790,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Interactable
   interactionLabel: "Lower 4\uBC88 \uBC29 \uBB38"
   promptRoot: {fileID: 1584387496}
+  spriteRenderer: {fileID: 0}
+  highlightSprite: {fileID: 0}
+  roomInteriorUI: {fileID: 0}
 --- !u!61 &1684495425
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -3869,7 +3896,7 @@ SpriteRenderer:
   m_Size: {x: 0.53, y: 0.86}
   m_AdaptiveModeThreshold: 0.5
   m_SpriteTileMode: 0
-  m_WasSpriteAssigned: 1
+  m_WasSpriteAssigned: 0
   m_SpriteSortPoint: 0
   m_BlendShapeWeights: []
 --- !u!1 &1764777933

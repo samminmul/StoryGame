@@ -10,7 +10,8 @@ public class CorridorPlayerController : MonoBehaviour
     [SerializeField] private float maxX = 8.5f;
     [SerializeField] private float upperFloorSplitY = 0f;
     [SerializeField] private string leftExitDestination = "OO";
-    [SerializeField] private string upperExitScene = "갑판";
+    [SerializeField] private string upperExitScene = "갑판 앞";
+    [SerializeField] private string upperLeftExitScene = "갑판 뒤";
     [SerializeField] private string lowerRightExitScene = "선장실";
     [SerializeField] private float frameDuration = 0.15f;
     [SerializeField] private Sprite idleSprite;
@@ -60,8 +61,8 @@ public class CorridorPlayerController : MonoBehaviour
                 loggedLeftExit = true;
                 if (position.y > upperFloorSplitY)
                 {
-                    // 2층(위층) 왼쪽 끝은 갑판 씬으로 전환한다.
-                    SceneManager.LoadScene(upperExitScene);
+                    // 2층(위층) 왼쪽 끝은 갑판 뒤 씬으로 전환한다.
+                    SceneManager.LoadScene(upperLeftExitScene);
                 }
                 else
                 {
