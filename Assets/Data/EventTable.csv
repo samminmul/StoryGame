@@ -1,0 +1,13 @@
+﻿eventCode,eventType,arg1,arg2,arg3
+initial,day,1,,
+initial,person,victor,gabpan,5
+initial,personkill,cook,gabpan,
+initial,item,mirror,room1,2
+initial,itemkill,book,gabpan,
+initial,object,box,gabpan,9
+initial,objectkill,mirror,room1,
+initial,dialogue,emptyBox,gabpan,box
+initial,sleep,b,,
+initial,highlight,door1,seonsilbokdo,
+initial,trigger,P,seonsilbokdo,picture
+initial,diary,d12fail,,
