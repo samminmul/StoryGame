@@ -4,8 +4,7 @@ using UnityEngine.InputSystem;
 public class DraggableGauge : MonoBehaviour
 {
     [SerializeField] private Transform handle;
-    [SerializeField] private float minX;
-    [SerializeField] private float maxX;
+    [SerializeField] private Collider2D trackCollider;
     [SerializeField] private float startValue = 1f;
 
     public float Value { get; private set; }
@@ -14,12 +13,19 @@ public class DraggableGauge : MonoBehaviour
     // 핸들에 붙은 콜라이더로 히트 테스트한다.
     private Collider2D col;
     private bool dragging;
+    private float minX;
+    private float maxX;
 
     private void Awake()
     {
         if (handle != null)
         {
             col = handle.GetComponent<Collider2D>();
+        }
+        if (trackCollider != null)
+        {
+            minX = trackCollider.bounds.min.x;
+            maxX = trackCollider.bounds.max.x;
         }
     }
 
