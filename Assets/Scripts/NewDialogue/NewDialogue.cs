@@ -45,13 +45,13 @@ public class NewDialogue: MonoBehaviour
 
     private int FindNextPageNum(int choiceIndex = 0)
     {
-        if (currentPage.IsChoicePage())
+        if (IsCurrentPageChoice())
         {
-            return currentPage.GetLines()[choiceIndex].jumpto ?? (currentPageNum + 1); // Return the jumpto of the chosen line, or next page if null
+            return GetCurrentLines()[choiceIndex].jumpto ?? (currentPageNum + 1); // Return the jumpto of the chosen line, or next page if null
         }
         else
         {
-            return currentPage.GetLine().jumpto ?? (currentPageNum + 1); // Return next page for non-choice pages
+            return GetCurrentLine().jumpto ?? (currentPageNum + 1); // Return next page for non-choice pages
         }
     }
 
@@ -68,9 +68,9 @@ public class NewDialogue: MonoBehaviour
             Debug.LogError($"ExecuteLine() called with invalid pageNum {pageNum}.");
             return;
         }
-        if (currentPage.IsChoicePage())
+        if (IsCurrentPageChoice())
         {
-            var lines = currentPage.GetLines();
+            var lines = GetCurrentLines();
             if (choiceIndex < 0 || choiceIndex >= lines.Count)
             {
                 Debug.LogError($"ExecuteLine() called with invalid choiceIndex {choiceIndex} for pageNum {pageNum}.");
@@ -85,7 +85,7 @@ public class NewDialogue: MonoBehaviour
         }
         else
         {
-            var line = currentPage.GetLine();
+            var line = GetCurrentLine();
             if (!string.IsNullOrEmpty(line.trigger))
             {
                 LineTrigger(line);
@@ -95,7 +95,7 @@ public class NewDialogue: MonoBehaviour
 
     public void GoToNextPage()
     {
-        if (currentPage.IsChoicePage())
+        if (IsCurrentPageChoice())
         {
             Debug.LogError("GoToNextPage() called on a choice page, use Choose() instead.");
             return;
@@ -107,7 +107,7 @@ public class NewDialogue: MonoBehaviour
 
     public void Choose(int choiceIndex)
     {
-        if (!currentPage.IsChoicePage())
+        if (!IsCurrentPageChoice())
         {
             Debug.LogError("Choose() called on a non-choice page, use GoToNextPage() instead.");
             return;
@@ -117,14 +117,14 @@ public class NewDialogue: MonoBehaviour
         SetPage(nextPageNum);
     }
 
-    public bool IsChoicePage()
+    public bool IsCurrentPageChoice()
     {
         return currentPage.IsChoicePage();
     }
 
     public NewDialogueLineData GetCurrentLine() // For non-choice pages, 데이터 전부 받기
     {
-        if (currentPage.IsChoicePage())
+        if (IsCurrentPageChoice())
         {
             Debug.LogError("GetCurrentLine() called on a choice page, use GetCurrentLines() instead.");
             return null;
@@ -137,7 +137,7 @@ public class NewDialogue: MonoBehaviour
 
     public List<NewDialogueLineData> GetCurrentLines() // For choice pages, 리스트 형태로 데이터 전부 받기
     {
-        if (!currentPage.IsChoicePage())
+        if (!IsCurrentPageChoice())
         {
             Debug.LogError("GetCurrentLines() called on a non-choice page, use GetCurrentLine() instead.");
             return null;
