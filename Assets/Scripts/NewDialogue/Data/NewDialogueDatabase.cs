@@ -37,8 +37,13 @@ public class NewDialogueDatabase : MonoBehaviour
             {
                 record.weight ??= 0; // Set default weight to 0 if null
                 record.jumpto ??= record.dialoueNum + 1; // Set default jumpto to next line if null
-                AddDialogueLine(record);
+                AddDialogueLine(record);    
             }
+        }
+        // Initialize each dialogue after all lines are added
+        foreach (var dialogue in dialogues.Values)
+        {
+            dialogue.Initialize(0); 
         }
     }
 

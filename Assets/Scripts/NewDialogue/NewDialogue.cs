@@ -1,9 +1,10 @@
 using System.Collections.Generic;
+using System.Linq;
 using Unity.AppUI.UI;
 using UnityEngine;
 using UnityEngine.Windows.Speech;
 
-public class NewDialogue: MonoBehaviour
+public class NewDialogue
 {
     EventManager eventManager;
     private Dictionary<int, NewDialoguePageData> pages;
@@ -15,18 +16,38 @@ public class NewDialogue: MonoBehaviour
     {
         pages = new Dictionary<int, NewDialoguePageData>();
         eventManager = EventManager.Instance;
-        SetPage(0);
         weightSum = 0;
     }
 
     private void SetPage(int pageNum)
     {
         currentPageNum = pageNum;
+        if (!pages.ContainsKey(currentPageNum))
+        {
+            Debug.LogError($"SetPage() called with invalid pageNum {currentPageNum}.");
+            return;
+        }
         currentPage = pages[currentPageNum];
         if (currentPage.IsEndPage())
         {
             EndDialogue();
         }
+    }
+
+    // Call after all pages have been added to initialize current page
+    public void Initialize(int startPage = 0)
+    {
+        int target = startPage;
+        if (!pages.ContainsKey(target))
+        {
+            if (pages.Count == 0)
+            {
+                Debug.LogWarning("Initialize() called but no pages exist.");
+                return;
+            }
+            target = pages.Keys.Min();
+        }
+        SetPage(target);
     }
 
     private void EndDialogue()
