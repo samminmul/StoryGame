@@ -23,8 +23,25 @@ public class NewDialogue: MonoBehaviour
     {
         currentPageNum = pageNum;
         currentPage = pages[currentPageNum];
+        if (currentPage.IsEndPage())
+        {
+            EndDialogue();
+        }
     }
 
+    private void EndDialogue()
+    {
+        if (weightSum > 0)
+        {
+            ExecuteLine(currentPageNum); // Execute the line on the end page to trigger any final events
+        }
+        else
+        {
+            ExecuteLine(currentPageNum + 1); // Execute the line on the end page to trigger any final events
+        }
+        Debug.Log("Dialogue ended.");
+
+    }
 
     private int FindNextPageNum(int choiceIndex = 0)
     {
