@@ -5783,7 +5783,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &999889011
 Transform:
   m_ObjectHideFlags: 0
@@ -8786,8 +8786,9 @@ GameObject:
   - component: {fileID: 1483970400}
   - component: {fileID: 1483970399}
   - component: {fileID: 1483970398}
+  - component: {fileID: 1483970401}
   m_Layer: 0
-  m_Name: EventManager
+  m_Name: DataManager
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -8834,6 +8835,19 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1483970401
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1483970397}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f8db6c30608d01d4a99af22c08ace7bd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::NewDialogueDatabase
+  dialogueCSV: {fileID: 4900000, guid: c81b10bfe2661c14ea4c35831d51ae17, type: 3}
 --- !u!1 &1495632050
 GameObject:
   m_ObjectHideFlags: 0
