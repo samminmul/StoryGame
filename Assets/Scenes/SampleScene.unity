@@ -12591,8 +12591,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0}
   m_AnchorMax: {x: 0.5, y: 0}
-  m_AnchoredPosition: {x: 0, y: -294.3}
-  m_SizeDelta: {x: 1920, y: 176.58}
+  m_AnchoredPosition: {x: -186, y: -289}
+  m_SizeDelta: {x: 1468.64, y: 176.58}
   m_Pivot: {x: 0.5, y: 0}
 --- !u!1 &3846263762272511587
 GameObject:
@@ -13001,8 +13001,8 @@ MonoBehaviour:
   inventoryPanel: {fileID: 2763401226263670327}
   slotRow: {fileID: 5189001799592778094}
   slotPrefab: {fileID: 5964354433518573688, guid: 120da19dba8eb9f41af67aca5192de48, type: 3}
-  slotSize: 18
-  slotUIDistance: 100
+  slotSize: 10
+  slotUIDistance: 135
   inventoryMoveDist: 50
 --- !u!114 &8152323879374400906
 MonoBehaviour:

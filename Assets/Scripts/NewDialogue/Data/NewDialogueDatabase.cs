@@ -13,7 +13,7 @@ public class NewDialogueDatabase : MonoBehaviour
     void Awake()
     {
         LoadDialogues();
-        DBLogForDebug();
+        //DBLogForDebug();
     }
 
     private void DBLogForDebug()
