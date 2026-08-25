@@ -14,7 +14,6 @@ public class CabinInteriorUI : MonoBehaviour
         public Sprite sprite;
     }
 
-    [SerializeField] private NewDialogueManager dialogueManager;
     [SerializeField] private Text dialogueText;
     [SerializeField] private Button choiceButton1;
     [SerializeField] private Text choiceButton1Text;
@@ -22,59 +21,52 @@ public class CabinInteriorUI : MonoBehaviour
     [SerializeField] private Text choiceButton2Text;
     [SerializeField] private Image portraitImage;
     [SerializeField] private Image backgroundImage;
+    [SerializeField] private float activeSpeakerScale = 1.1f;
 
-    [SerializeField] private string firstVisitDialogueCode = "a";
-    [SerializeField] private string revisitDialogueCode = "b";
+    [SerializeField] private InventoryManager inventoryManager;
+    // itemCode가 있는 선택지가 아이템을 보유했을 때 바뀌는 배경 이미지
+    [SerializeField] private Sprite choiceHighlightSprite;
+    // TODO: 씬에 "아이템을 소모하시겠습니까?" 확인 패널(Yes/No 버튼 포함)을 새로 만들어서 아래 세 필드에 연결해야 함. 아직 씬에 없음.
+    [SerializeField] private GameObject itemConsumeConfirmPanel;
+    [SerializeField] private Button itemConsumeConfirmYesButton;
+    [SerializeField] private Button itemConsumeConfirmNoButton;
 
     // key: "{speakerCode}_{face}" (e.g. "victor_smile")
     [SerializeField] private List<SpriteMapping> faceSprites = new();
     // key: CSV의 background 값
     [SerializeField] private List<SpriteMapping> backgroundSprites = new();
 
-    private const string HasVisitedPrefKey = "CabinInterior_HasVisited";
-
     private NewDialogue currentDialogue;
-    private bool hasVisitedBefore;
     private Dictionary<string, Sprite> faceSpriteMap;
     private Dictionary<string, Sprite> backgroundSpriteMap;
     private readonly Dictionary<string, string> lastFaceBySpeaker = new();
+    private Sprite choiceButton1NormalSprite;
+    private Sprite choiceButton2NormalSprite;
+    private int pendingChoiceIndex;
 
     private void Awake()
     {
-        hasVisitedBefore = PlayerPrefs.GetInt(HasVisitedPrefKey, 0) == 1;
         faceSpriteMap = faceSprites.ToDictionary(entry => entry.key, entry => entry.sprite);
         backgroundSpriteMap = backgroundSprites.ToDictionary(entry => entry.key, entry => entry.sprite);
 
         if (choiceButton1 != null)
         {
+            choiceButton1NormalSprite = choiceButton1.image.sprite;
             choiceButton1.onClick.AddListener(() => OnChoiceSelected(0));
         }
         if (choiceButton2 != null)
         {
+            choiceButton2NormalSprite = choiceButton2.image.sprite;
             choiceButton2.onClick.AddListener(() => OnChoiceSelected(1));
         }
-    }
-
-    private void OnEnable()
-    {
-        string dialogueCode = hasVisitedBefore ? revisitDialogueCode : firstVisitDialogueCode;
-        if (!hasVisitedBefore)
+        if (itemConsumeConfirmYesButton != null)
         {
-            hasVisitedBefore = true;
-            PlayerPrefs.SetInt(HasVisitedPrefKey, 1);
-            PlayerPrefs.Save();
+            itemConsumeConfirmYesButton.onClick.AddListener(OnItemConsumeConfirmed);
         }
-
-        currentDialogue = dialogueManager.GetDialogue(dialogueCode);
-        if (currentDialogue == null)
+        if (itemConsumeConfirmNoButton != null)
         {
-            Debug.LogError($"CabinInteriorUI: dialogue '{dialogueCode}' not found.");
-            gameObject.SetActive(false);
-            return;
+            itemConsumeConfirmNoButton.onClick.AddListener(OnItemConsumeCancelled);
         }
-        lastFaceBySpeaker.Clear();
-        currentDialogue.Initialize(0);
-        ShowCurrentPage();
     }
 
     private void Update()
@@ -114,12 +106,48 @@ public class CabinInteriorUI : MonoBehaviour
         {
             return;
         }
-        if (choiceIndex >= currentDialogue.GetCurrentLines().Count)
+        var lines = currentDialogue.GetCurrentLines();
+        if (choiceIndex >= lines.Count)
         {
             return;
         }
+
+        // 아이템이 필요한 선택지는 SetChoiceButton()에서 미보유 시 이미 클릭 불가(interactable=false) 상태이므로,
+        // 여기 도달했다면 아이템을 보유한 상태 -> 소모 여부를 먼저 확인한다.
+        if (!string.IsNullOrEmpty(lines[choiceIndex].itemCode))
+        {
+            pendingChoiceIndex = choiceIndex;
+            if (itemConsumeConfirmPanel != null)
+            {
+                itemConsumeConfirmPanel.SetActive(true);
+            }
+            return;
+        }
+
         currentDialogue.Choose(choiceIndex);
         ShowCurrentPage();
+    }
+
+    private void OnItemConsumeConfirmed()
+    {
+        if (itemConsumeConfirmPanel != null)
+        {
+            itemConsumeConfirmPanel.SetActive(false);
+        }
+
+        // TODO: 인벤토리에서 이 선택지에 연결된 아이템(현재 페이지 lines[pendingChoiceIndex].itemCode)을 실제로 제거하는 코드
+        // 예: inventoryManager.DeleteItem(item);
+
+        currentDialogue.Choose(pendingChoiceIndex);
+        ShowCurrentPage();
+    }
+
+    private void OnItemConsumeCancelled()
+    {
+        if (itemConsumeConfirmPanel != null)
+        {
+            itemConsumeConfirmPanel.SetActive(false);
+        }
     }
 
     private void ShowCurrentPage()
@@ -135,8 +163,8 @@ public class CabinInteriorUI : MonoBehaviour
         {
             var lines = currentDialogue.GetCurrentLines();
             dialogueText.text = string.Empty;
-            SetChoiceButton(choiceButton1, choiceButton1Text, lines.Count > 0 ? lines[0].lineKr : null);
-            SetChoiceButton(choiceButton2, choiceButton2Text, lines.Count > 1 ? lines[1].lineKr : null);
+            SetChoiceButton(choiceButton1, choiceButton1Text, choiceButton1NormalSprite, lines.Count > 0 ? lines[0] : null);
+            SetChoiceButton(choiceButton2, choiceButton2Text, choiceButton2NormalSprite, lines.Count > 1 ? lines[1] : null);
         }
         else
         {
@@ -144,8 +172,8 @@ public class CabinInteriorUI : MonoBehaviour
             dialogueText.text = string.IsNullOrEmpty(line.speakerCode) || line.speakerCode == "description"
                 ? line.lineKr
                 : $"<b>{line.speakerCode}</b>\n{line.lineKr}";
-            SetChoiceButton(choiceButton1, choiceButton1Text, null);
-            SetChoiceButton(choiceButton2, choiceButton2Text, null);
+            SetChoiceButton(choiceButton1, choiceButton1Text, choiceButton1NormalSprite, null);
+            SetChoiceButton(choiceButton2, choiceButton2Text, choiceButton2NormalSprite, null);
             UpdatePortrait(line);
             UpdateBackground(line);
         }
@@ -156,18 +184,31 @@ public class CabinInteriorUI : MonoBehaviour
         return !currentDialogue.IsCurrentPageChoice() && currentDialogue.GetCurrentLine().speakerCode == "end";
     }
 
-    private void SetChoiceButton(Button button, Text label, string text)
+    // itemCode가 있는 선택지는 항상 보이되, 아이템을 보유했을 때만 하이라이트 이미지로 바뀌고 선택 가능해진다.
+    private void SetChoiceButton(Button button, Text label, Sprite normalSprite, NewDialogueLineData line)
     {
         if (button == null)
         {
             return;
         }
-        bool show = text != null;
+
+        bool show = line != null;
         button.gameObject.SetActive(show);
-        if (show && label != null)
+        if (!show)
         {
-            label.text = text;
+            return;
         }
+
+        if (label != null)
+        {
+            label.text = line.lineKr;
+        }
+
+        bool requiresItem = !string.IsNullOrEmpty(line.itemCode);
+        bool hasItem = !requiresItem || (inventoryManager != null && inventoryManager.HaveItem(line.itemCode));
+
+        button.interactable = hasItem;
+        button.image.sprite = requiresItem && hasItem ? choiceHighlightSprite : normalSprite;
     }
 
     private void UpdatePortrait(NewDialogueLineData line)
@@ -195,6 +236,7 @@ public class CabinInteriorUI : MonoBehaviour
         {
             portraitImage.sprite = sprite;
             portraitImage.gameObject.SetActive(true);
+            portraitImage.rectTransform.localScale = Vector3.one * activeSpeakerScale;
             lastFaceBySpeaker[line.speakerCode] = face;
         }
         else
@@ -218,5 +260,24 @@ public class CabinInteriorUI : MonoBehaviour
         {
             Debug.LogWarning($"CabinInteriorUI: background sprite for key '{line.background}' not found.");
         }
+    }
+
+    public void StartDialogue(NewDialogue dialogue)
+    {
+        if (dialogue == null)
+        {
+            Debug.LogError("StartDialogue() called with a null dialogue.");
+            return;
+        }
+
+        currentDialogue = dialogue;
+        lastFaceBySpeaker.Clear();
+        currentDialogue.Initialize(0);
+        if (itemConsumeConfirmPanel != null)
+        {
+            itemConsumeConfirmPanel.SetActive(false);
+        }
+        gameObject.SetActive(true);
+        ShowCurrentPage();
     }
 }

@@ -9,6 +9,8 @@ public class Interactable : MonoBehaviour
     [SerializeField] private SpriteRenderer spriteRenderer;
     [SerializeField] private Sprite highlightSprite;
     [SerializeField] private GameObject roomInteriorUI;
+    [SerializeField] private NewDialogueManager dialogueManager;
+    [SerializeField] private string dialogueCode;
 
     private bool playerInRange;
     private Sprite normalSprite;
@@ -42,6 +44,23 @@ public class Interactable : MonoBehaviour
         if (keyboard != null && keyboard.spaceKey.wasPressedThisFrame)
         {
             Debug.Log($"{interactionLabel}와(과) 상호작용함");
+
+            if (!string.IsNullOrEmpty(dialogueCode) && dialogueManager != null)
+            {
+                NewDialogue dialogue = dialogueManager.GetDialogue(dialogueCode);
+                if (dialogue == null)
+                {
+                    Debug.LogError($"Interactable: dialogue '{dialogueCode}' not found.");
+                    return;
+                }
+                CabinInteriorUI dialogueUI = roomInteriorUI != null ? roomInteriorUI.GetComponent<CabinInteriorUI>() : null;
+                if (dialogueUI != null)
+                {
+                    dialogueUI.StartDialogue(dialogue);
+                    return;
+                }
+            }
+
             if (roomInteriorUI != null)
             {
                 roomInteriorUI.SetActive(true);
