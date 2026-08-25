@@ -12974,7 +12974,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 32c292f0ca37caf4e9f974635d73e16c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ItemDebugger
-  itemA: {fileID: 0}
+  itemA: {fileID: 7588830730476794774, guid: a4b23c05b54616f4b89f015c81aa28c2, type: 3}
   itemB: {fileID: 0}
 --- !u!222 &8152323879374400908
 CanvasRenderer:
