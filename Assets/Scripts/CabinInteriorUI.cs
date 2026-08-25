@@ -25,6 +25,7 @@ public class CabinInteriorUI : MonoBehaviour
 
     [SerializeField] private InventoryManager inventoryManager;
     // itemCode가 있는 선택지가 아이템을 보유했을 때 바뀌는 배경 이미지
+    // TODO: 현재 씬에 미연결(NULL) 상태. 지정 전까지는 interactable만 true가 되고 버튼 이미지는 하이라이트로 바뀌지 않음.
     [SerializeField] private Sprite choiceHighlightSprite;
     // TODO: 씬에 "아이템을 소모하시겠습니까?" 확인 패널(Yes/No 버튼 포함)을 새로 만들어서 아래 세 필드에 연결해야 함. 아직 씬에 없음.
     [SerializeField] private GameObject itemConsumeConfirmPanel;
