@@ -81,6 +81,9 @@ public class DeckPlayerController : MonoBehaviour
         }
 
         transform.position = targetPosition;
+        // 프로젝트의 Physics2D.autoSyncTransforms 설정이 꺼져 있어서, 여기서 직접 동기화하지 않으면
+        // 트리거(OnTriggerEnter2D/Exit2D)가 플레이어 이동을 인식하지 못한다.
+        Physics2D.SyncTransforms();
     }
 
     private bool IsBlocked(Vector3 targetPosition)

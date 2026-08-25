@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
@@ -6,51 +8,42 @@ using UnityEngine.UI;
 public class CabinInteriorUI : MonoBehaviour
 {
     [System.Serializable]
-    private class DialogueNode
+    private struct SpriteMapping
     {
-        public string speaker;
-        public string text;
-        public string[] choiceLabels;
-        public int[] choiceNextIndices;
-        public int nextIndex = -1;
+        public string key;
+        public Sprite sprite;
     }
 
+    [SerializeField] private NewDialogueManager dialogueManager;
     [SerializeField] private Text dialogueText;
     [SerializeField] private Button choiceButton1;
     [SerializeField] private Text choiceButton1Text;
     [SerializeField] private Button choiceButton2;
     [SerializeField] private Text choiceButton2Text;
+    [SerializeField] private Image portraitImage;
+    [SerializeField] private Image backgroundImage;
 
-    private const int FirstVisitStartIndex = 0;
-    private const int RevisitStartIndex = 5;
+    [SerializeField] private string firstVisitDialogueCode = "a";
+    [SerializeField] private string revisitDialogueCode = "b";
+
+    // key: "{speakerCode}_{face}" (e.g. "victor_smile")
+    [SerializeField] private List<SpriteMapping> faceSprites = new();
+    // key: CSV의 background 값
+    [SerializeField] private List<SpriteMapping> backgroundSprites = new();
+
     private const string HasVisitedPrefKey = "CabinInterior_HasVisited";
 
-    // TODO: 임시 대사. 실제 대사가 정해지면 교체한다.
-    private readonly DialogueNode[] nodes =
-    {
-        // 0~4: 첫 방문
-        new DialogueNode { speaker = "", text = "선실 안은 조용하고 아늑하다.", nextIndex = 1 },
-        new DialogueNode
-        {
-            speaker = "선원",
-            text = "여기가 네 방이야. 짐은 잘 챙겼어?",
-            choiceLabels = new[] { "네, 챙겼어요", "아직이요" },
-            choiceNextIndices = new[] { 2, 3 },
-        },
-        new DialogueNode { speaker = "선원", text = "다행이네. 그럼 푹 쉬도록 해.", nextIndex = 4 },
-        new DialogueNode { speaker = "선원", text = "그럼 서둘러 챙기는 게 좋을 거야.", nextIndex = 4 },
-        new DialogueNode { speaker = "선원", text = "필요한 게 있으면 언제든 불러.", nextIndex = -1 },
-
-        // 5~: 재방문 (한 번이라도 대화한 뒤 다시 들어왔을 때)
-        new DialogueNode { speaker = "선원", text = "또 왔네. 별일 없지?", nextIndex = -1 },
-    };
-
-    private int currentIndex;
+    private NewDialogue currentDialogue;
     private bool hasVisitedBefore;
+    private Dictionary<string, Sprite> faceSpriteMap;
+    private Dictionary<string, Sprite> backgroundSpriteMap;
+    private readonly Dictionary<string, string> lastFaceBySpeaker = new();
 
     private void Awake()
     {
         hasVisitedBefore = PlayerPrefs.GetInt(HasVisitedPrefKey, 0) == 1;
+        faceSpriteMap = faceSprites.ToDictionary(entry => entry.key, entry => entry.sprite);
+        backgroundSpriteMap = backgroundSprites.ToDictionary(entry => entry.key, entry => entry.sprite);
 
         if (choiceButton1 != null)
         {
@@ -64,18 +57,33 @@ public class CabinInteriorUI : MonoBehaviour
 
     private void OnEnable()
     {
-        currentIndex = hasVisitedBefore ? RevisitStartIndex : FirstVisitStartIndex;
+        string dialogueCode = hasVisitedBefore ? revisitDialogueCode : firstVisitDialogueCode;
         if (!hasVisitedBefore)
         {
             hasVisitedBefore = true;
             PlayerPrefs.SetInt(HasVisitedPrefKey, 1);
             PlayerPrefs.Save();
         }
-        ShowNode(currentIndex);
+
+        currentDialogue = dialogueManager.GetDialogue(dialogueCode);
+        if (currentDialogue == null)
+        {
+            Debug.LogError($"CabinInteriorUI: dialogue '{dialogueCode}' not found.");
+            gameObject.SetActive(false);
+            return;
+        }
+        lastFaceBySpeaker.Clear();
+        currentDialogue.Initialize(0);
+        ShowCurrentPage();
     }
 
     private void Update()
     {
+        if (currentDialogue == null)
+        {
+            return;
+        }
+
         Keyboard keyboard = Keyboard.current;
         if (keyboard == null)
         {
@@ -88,8 +96,7 @@ public class CabinInteriorUI : MonoBehaviour
             return;
         }
 
-        bool hasChoices = nodes[currentIndex].choiceLabels != null && nodes[currentIndex].choiceLabels.Length > 0;
-        if (!hasChoices && keyboard.enterKey.wasPressedThisFrame)
+        if (!currentDialogue.IsCurrentPageChoice() && keyboard.enterKey.wasPressedThisFrame)
         {
             Advance();
         }
@@ -97,37 +104,56 @@ public class CabinInteriorUI : MonoBehaviour
 
     private void Advance()
     {
-        int nextIndex = nodes[currentIndex].nextIndex;
-        if (nextIndex < 0)
-        {
-            gameObject.SetActive(false);
-            return;
-        }
-        currentIndex = nextIndex;
-        ShowNode(currentIndex);
+        currentDialogue.GoToNextPage();
+        ShowCurrentPage();
     }
 
     private void OnChoiceSelected(int choiceIndex)
     {
-        int[] choiceNextIndices = nodes[currentIndex].choiceNextIndices;
-        if (choiceNextIndices == null || choiceIndex >= choiceNextIndices.Length)
+        if (currentDialogue == null || !currentDialogue.IsCurrentPageChoice())
         {
             return;
         }
-        currentIndex = choiceNextIndices[choiceIndex];
-        ShowNode(currentIndex);
+        if (choiceIndex >= currentDialogue.GetCurrentLines().Count)
+        {
+            return;
+        }
+        currentDialogue.Choose(choiceIndex);
+        ShowCurrentPage();
     }
 
-    private void ShowNode(int index)
+    private void ShowCurrentPage()
     {
-        DialogueNode node = nodes[index];
-        dialogueText.text = string.IsNullOrEmpty(node.speaker)
-            ? node.text
-            : $"<b>{node.speaker}</b>\n{node.text}";
+        if (IsCurrentPageEnd())
+        {
+            gameObject.SetActive(false);
+            currentDialogue = null;
+            return;
+        }
 
-        bool hasChoices = node.choiceLabels != null && node.choiceLabels.Length > 0;
-        SetChoiceButton(choiceButton1, choiceButton1Text, hasChoices && node.choiceLabels.Length > 0 ? node.choiceLabels[0] : null);
-        SetChoiceButton(choiceButton2, choiceButton2Text, hasChoices && node.choiceLabels.Length > 1 ? node.choiceLabels[1] : null);
+        if (currentDialogue.IsCurrentPageChoice())
+        {
+            var lines = currentDialogue.GetCurrentLines();
+            dialogueText.text = string.Empty;
+            SetChoiceButton(choiceButton1, choiceButton1Text, lines.Count > 0 ? lines[0].lineKr : null);
+            SetChoiceButton(choiceButton2, choiceButton2Text, lines.Count > 1 ? lines[1].lineKr : null);
+        }
+        else
+        {
+            NewDialogueLineData line = currentDialogue.GetCurrentLine();
+            dialogueText.text = string.IsNullOrEmpty(line.speakerCode) || line.speakerCode == "description"
+                ? line.lineKr
+                : $"<b>{line.speakerCode}</b>\n{line.lineKr}";
+            SetChoiceButton(choiceButton1, choiceButton1Text, null);
+            SetChoiceButton(choiceButton2, choiceButton2Text, null);
+            UpdatePortrait(line);
+            UpdateBackground(line);
+        }
+    }
+
+    private bool IsCurrentPageEnd()
+    {
+        return !currentDialogue.IsCurrentPageChoice() && currentDialogue.GetCurrentLine().speakerCode == "end";
     }
 
     private void SetChoiceButton(Button button, Text label, string text)
@@ -141,6 +167,56 @@ public class CabinInteriorUI : MonoBehaviour
         if (show && label != null)
         {
             label.text = text;
+        }
+    }
+
+    private void UpdatePortrait(NewDialogueLineData line)
+    {
+        if (portraitImage == null)
+        {
+            return;
+        }
+
+        // 설명문처럼 화자가 명시되지 않은 줄은 직전에 보여주던 초상화를 그대로 유지한다.
+        if (string.IsNullOrEmpty(line.speakerCode) || line.speakerCode == "description")
+        {
+            return;
+        }
+
+        // face 값이 비어있으면 같은 화자가 마지막으로 보여준 표정을 그대로 유지한다.
+        string face = line.face;
+        if (string.IsNullOrEmpty(face))
+        {
+            lastFaceBySpeaker.TryGetValue(line.speakerCode, out face);
+        }
+
+        string key = $"{line.speakerCode}_{face}";
+        if (!string.IsNullOrEmpty(face) && faceSpriteMap.TryGetValue(key, out Sprite sprite))
+        {
+            portraitImage.sprite = sprite;
+            portraitImage.gameObject.SetActive(true);
+            lastFaceBySpeaker[line.speakerCode] = face;
+        }
+        else
+        {
+            portraitImage.gameObject.SetActive(false);
+        }
+    }
+
+    private void UpdateBackground(NewDialogueLineData line)
+    {
+        // 빈 값이면 이전 배경을 그대로 유지한다.
+        if (backgroundImage == null || string.IsNullOrEmpty(line.background))
+        {
+            return;
+        }
+        if (backgroundSpriteMap.TryGetValue(line.background, out Sprite sprite))
+        {
+            backgroundImage.sprite = sprite;
+        }
+        else
+        {
+            Debug.LogWarning($"CabinInteriorUI: background sprite for key '{line.background}' not found.");
         }
     }
 }
