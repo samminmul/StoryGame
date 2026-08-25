@@ -20,4 +20,9 @@ public class Character : MonoBehaviour
         happiness += amount;
         Debug.Log($"Character's happiness changed by {amount}. New happiness: {happiness}");
     }
+
+    public void ChangeFace(int faceIndex)
+    {
+
+    }
 }

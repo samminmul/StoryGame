@@ -34,22 +34,6 @@ public class NewDialogue
         }
     }
 
-    // Call after all pages have been added to initialize current page
-    public void Initialize(int startPage = 0)
-    {
-        int target = startPage;
-        if (!pages.ContainsKey(target))
-        {
-            if (pages.Count == 0)
-            {
-                Debug.LogWarning("Initialize() called but no pages exist.");
-                return;
-            }
-            target = pages.Keys.Min();
-        }
-        SetPage(target);
-    }
-
     private void EndDialogue()
     {
         if (weightSum > 0)
@@ -178,6 +162,22 @@ public class NewDialogue
             pages[pageNum] = new NewDialoguePageData();
         }
         pages[pageNum].lines.Add(lineData);
+    }
+
+    // Call after all pages have been added to initialize current page
+    public void Initialize(int startPage = 0)
+    {
+        int target = startPage;
+        if (!pages.ContainsKey(target))
+        {
+            if (pages.Count == 0)
+            {
+                Debug.LogWarning("Initialize() called but no pages exist.");
+                return;
+            }
+            target = pages.Keys.Min();
+        }
+        SetPage(target);
     }
 
     public void DataLogForDebug()
