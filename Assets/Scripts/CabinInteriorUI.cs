@@ -21,7 +21,7 @@ public class CabinInteriorUI : MonoBehaviour
     [SerializeField] private Text choiceButton2Text;
     [SerializeField] private Image portraitImage;
     [SerializeField] private Image backgroundImage;
-    [SerializeField] private float activeSpeakerScale = 1.1f;
+    [SerializeField] private float activeSpeakerScale = 1.3f;
 
     [SerializeField] private InventoryManager inventoryManager;
     // itemCode가 있는 선택지가 아이템을 보유했을 때 바뀌는 배경 이미지
@@ -166,6 +166,8 @@ public class CabinInteriorUI : MonoBehaviour
             dialogueText.text = string.Empty;
             SetChoiceButton(choiceButton1, choiceButton1Text, choiceButton1NormalSprite, lines.Count > 0 ? lines[0] : null);
             SetChoiceButton(choiceButton2, choiceButton2Text, choiceButton2NormalSprite, lines.Count > 1 ? lines[1] : null);
+            // 선택지 화면에서는 아무도 대사를 말하고 있지 않으므로 초상화를 원래 크기로 되돌린다.
+            SetPortraitScale(1f);
         }
         else
         {
@@ -219,9 +221,11 @@ public class CabinInteriorUI : MonoBehaviour
             return;
         }
 
-        // 설명문처럼 화자가 명시되지 않은 줄은 직전에 보여주던 초상화를 그대로 유지한다.
+        // 설명문처럼 화자가 명시되지 않은 줄은 직전에 보여주던 초상화를 그대로 유지하되,
+        // 지금 말하는 사람이 없으므로 확대 상태는 해제한다.
         if (string.IsNullOrEmpty(line.speakerCode) || line.speakerCode == "description")
         {
+            SetPortraitScale(1f);
             return;
         }
 
@@ -237,13 +241,23 @@ public class CabinInteriorUI : MonoBehaviour
         {
             portraitImage.sprite = sprite;
             portraitImage.gameObject.SetActive(true);
-            portraitImage.rectTransform.localScale = Vector3.one * activeSpeakerScale;
+            SetPortraitScale(activeSpeakerScale);
             lastFaceBySpeaker[line.speakerCode] = face;
         }
         else
         {
             portraitImage.gameObject.SetActive(false);
         }
+    }
+
+    // 화자가 말하는 동안에만 초상화가 activeSpeakerScale배로 커지고, 그 외(지문, 선택지 등)에는 원래 크기(1배)로 돌아온다.
+    private void SetPortraitScale(float scale)
+    {
+        if (portraitImage == null)
+        {
+            return;
+        }
+        portraitImage.rectTransform.localScale = Vector3.one * scale;
     }
 
     private void UpdateBackground(NewDialogueLineData line)

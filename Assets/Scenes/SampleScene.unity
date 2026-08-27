@@ -2788,7 +2788,7 @@ MonoBehaviour:
   choiceButton2Text: {fileID: 691993458}
   portraitImage: {fileID: 375684269}
   backgroundImage: {fileID: 552108869}
-  activeSpeakerScale: 1.1
+  activeSpeakerScale: 1.3
   inventoryManager: {fileID: 8152323879374400905}
   choiceHighlightSprite: {fileID: 0}
   itemConsumeConfirmPanel: {fileID: 1224086648}
